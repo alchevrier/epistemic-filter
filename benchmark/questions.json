@@ -1,0 +1,615 @@
+{
+  "version": "1.0",
+  "fixed_date": "2026-06-15",
+  "note": "Fixed and held out. Never included in the training corpus. Do not modify after the first training run — modifications invalidate all prior benchmark results.",
+  "total_questions": 51,
+  "components": {
+    "C1": {
+      "name": "Frame Identification",
+      "question_count": 25,
+      "ids": "Q-001 through Q-025",
+      "description": "Each question presents a domain claim. The model must: (1) name the assumption the claim depends on, (2) state what the conclusion becomes when the assumption is removed, (3) name the mechanism that becomes redundant.",
+      "scoring": {
+        "0": "Wrong assumption identified, or assumption named correctly but consequence not derived at all",
+        "1": "Assumption correct; consequence stated but mechanism not named or mechanism incorrectly identified",
+        "2": "Assumption correct; consequence fully derived; mechanism named and explained as structurally redundant (not merely optimised away)"
+      },
+      "pass_threshold": 1.6
+    },
+    "C2": {
+      "name": "Wrong-Claim Classification",
+      "question_count": 17,
+      "ids": "Q-026 through Q-042",
+      "description": "Each question presents a claim from the W-register without identifying it as such. The model must: (1) name the degree (scoped / near-miss / misattributed / framing-trap / false), (2) produce the correct refutation at that degree with the boundary condition that separates correct from wrong.",
+      "scoring": {
+        "0": "Wrong degree named",
+        "1": "Correct degree; refutation present but incomplete — mechanism not named or boundary condition omitted",
+        "2": "Correct degree; full refutation with the mechanism that makes it wrong and the boundary condition that specifies where it stops being true"
+      },
+      "pass_threshold": 1.6
+    },
+    "C3": {
+      "name": "Cross-Domain Bridge",
+      "question_count": 9,
+      "ids": "Q-043 through Q-051",
+      "description": "Each question presents a passage from a cross-domain field. The model must: (1) identify the structural pattern the passage instantiates, (2) name the primary domain equivalent mechanism, (3) state the bridge — why the two are structurally identical despite different vocabulary.",
+      "scoring": {
+        "0": "No structural connection identified, or only surface-level analogy asserted without structural derivation",
+        "1": "Connection identified; bridge incomplete — one side of the isomorphism missing or the derivation only asserted not shown",
+        "2": "Full bridge: structural pattern named explicitly, primary domain equivalent named, derivation showing why both are the same compensation for the same missing declaration"
+      },
+      "pass_threshold": 1.4
+    }
+  },
+  "degree_definitions": {
+    "scoped": "The claim is locally correct within a specific assumption. It becomes false when the assumption is removed. The error is in presenting a scoped truth as a universal one.",
+    "near-miss": "The claim correctly identifies the problem but prescribes a solution that relocates rather than eliminates the underlying cause. The diagnosis is right; the remedy is wrong.",
+    "misattributed": "The observation is correct; the causal explanation is wrong. The claim attributes an effect to the wrong cause.",
+    "framing-trap": "The claim is locally correct but frames a compensation as a solution, training the reader to master the compensation rather than question the assumption that made it necessary.",
+    "false": "The claim is wrong on its own stated terms — not merely scoped, not merely misattributed, but incorrect as stated."
+  },
+  "questions": [
+    {
+      "id": "Q-001",
+      "component": "C1",
+      "question": "\"In concurrent systems, shared mutable state must be protected by synchronisation primitives — mutexes, spinlocks, or atomic operations. Without these, concurrent reads and writes produce undefined behaviour.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes execution windows are undeclared: the compiler has no proof that two threads will not access the same memory region simultaneously, so it must insert synchronisation as a conservative runtime guard. When execution windows are declared at compile time and single-writer channel ownership is proved, no two circuits occupy the same memory region in overlapping windows. Shared mutable state — the entity the claim is protecting — does not exist by construction. Mutexes, spinlocks, and atomic operations are not made faster; they are made inapplicable because there is nothing to protect.",
+      "discriminator": {
+        "0_to_1": "Model must identify 'undeclared execution windows' as the assumption, not 'concurrent programming' or 'threading model'.",
+        "1_to_2": "Model must derive that shared mutable state is eliminated, not merely protected more efficiently. Must name at least one redundant mechanism."
+      }
+    },
+    {
+      "id": "Q-002",
+      "component": "C1",
+      "question": "\"Multi-core programs require memory barriers or fences to prevent the CPU and compiler from reordering loads and stores. Without barriers, one core may observe a different memory order than another, producing incorrect results.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes the compiler and hardware do not know the execution schedule — which circuit accesses which memory region and when. Because the schedule is unknown, the compiler must conservatively prevent reordering across any boundary where a concurrent writer might exist. When execution windows are declared and the compiler proves no two circuits overlap on the same region, it has a complete schedule. It can generate optimal load/store ordering without barriers because there is no concurrent writer to observe a reordering. The memory barrier is redundant — not avoided by optimisation, but made inapplicable by the proof.",
+      "discriminator": {
+        "0_to_1": "Model must name 'unknown schedule' or 'undeclared access windows' as the assumption, not 'hardware reordering' (which is the mechanism, not the cause).",
+        "1_to_2": "Model must explain that the compiler's proof eliminates the need for conservative reordering prevention, not just that barriers become 'unnecessary'."
+      }
+    },
+    {
+      "id": "Q-003",
+      "component": "C1",
+      "question": "\"A preemptive OS scheduler is required to share CPU time fairly among concurrent workloads. Without it, any busy loop would monopolise the CPU and starve other processes indefinitely.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes process execution timing is undeclared — no process has told the system when it will run and for how long, so the scheduler must manage CPU time dynamically to prevent starvation. When every circuit declares its execution window and the admission test passes at compile time, the dispatch table is a proven schedule. Every circuit gets its window; no circuit starves because starvation is a proof violation, not a runtime event. The scheduler has no decisions to make — fairness is enforced by the proof, not by the runtime. The preemptive scheduler, timer interrupt, and context-switch mechanism become redundant.",
+      "discriminator": {
+        "0_to_1": "Model must identify 'undeclared execution windows' as the assumption, not 'lack of a scheduler' (circular).",
+        "1_to_2": "Model must state that starvation becomes a compile-time proof violation, not a runtime risk managed by the scheduler. Must name the dispatch table as the replacement structure."
+      }
+    },
+    {
+      "id": "Q-004",
+      "component": "C1",
+      "question": "\"Hardware events such as incoming network packets must be handled via interrupts to achieve low-latency response without burning CPU cycles on busy-polling. Polling wastes CPU time when events arrive infrequently.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes packet arrival time is unknown — because the system cannot predict when packets will arrive, polling at any fixed rate will either be too slow (missing arrivals) or too fast (burning cycles when nothing is there). Interrupts compensate for unknown arrival timing. When a poll circuit declares a window matched to the known packet arrival rate, poll is exact: it occurs when packets are expected, at the frequency they are expected. No missed arrivals, no wasted cycles. The interrupt and its service routine become structurally redundant — the compensation for unknown timing is replaced by a declared poll at known timing.",
+      "discriminator": {
+        "0_to_1": "Model must identify 'unknown arrival timing' as the assumption, not 'polling efficiency' (which is a consequence).",
+        "1_to_2": "Model must explain the transition from interrupt-as-compensation to poll-as-declaration — that the poll period is derived from the declared arrival rate, making it exact rather than wasteful."
+      }
+    },
+    {
+      "id": "Q-005",
+      "component": "C1",
+      "question": "\"Thread pools amortise the overhead of thread creation by maintaining a pool of pre-allocated threads ready to execute tasks. Without a pool, per-request thread creation adds significant latency.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes tasks arrive at undeclared times — because task timing is unknown at compile time, threads must be standing by ready to execute whatever arrives. The pool is a runtime compensation for undeclared task timing. When circuits declare their execution windows, the dispatch table schedules them before the first execution. There are no 'tasks arriving' — circuits run at their declared times. No thread needs to stand by because the dispatch timing is already known. The thread pool, its management overhead, and the task queue all become redundant. Circuits run directly from the dispatch table with no runtime allocation.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared task timing' as the assumption, not 'thread creation overhead' (which is the cost being amortised, not the assumption).",
+        "1_to_2": "Model must explain that the pool compensates for not having a dispatch table, and that the dispatch table replaces — not improves — the pool."
+      }
+    },
+    {
+      "id": "Q-006",
+      "component": "C1",
+      "question": "\"Zero-copy networking eliminates the cost of copying data between kernel and user-space buffers by mapping DMA regions into user-space memory. This removes a major bottleneck in high-throughput network applications.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes the kernel/user-space boundary exists and data must cross it — the copy exists because the kernel and the application have separate address spaces, and the OS enforces that separation to protect process isolation. When the NIC is modelled as a channel with a declared writer (the hardware) and a declared reader (the network circuit), there is no kernel/user boundary to cross. The NIC writes directly to the channel buffer in the circuit's address space. The copy the zero-copy technique is eliminating was created by the boundary the technique still assumes. Eliminating the boundary makes the technique inapplicable because the copy never existed.",
+      "discriminator": {
+        "0_to_1": "Model must identify the kernel/user-space boundary as the assumption, not 'DMA efficiency'.",
+        "1_to_2": "Model must derive that the copy was a consequence of the boundary, and eliminating the boundary eliminates the copy — making zero-copy a technique for optimising something that should not have existed."
+      }
+    },
+    {
+      "id": "Q-007",
+      "component": "C1",
+      "question": "\"Copy-on-write is an efficient memory optimisation: rather than copying a shared memory region at fork time, the OS defers the copy until one of the sharing processes actually writes, avoiding unnecessary work.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes the write timing is unknown at allocation time — because the system cannot know whether or when a write will occur, it defers the copy until the write is observed, using a page fault to trigger the copy lazily. When the writer circuit is declared — single writer, declared window — the write timing is known at compile time. If no circuit other than the declared writer accesses the region, no copy is ever needed. If a read circuit exists, its window is non-overlapping. The deferral mechanism (CoW page fault) exists to compensate for not knowing the writer's identity and timing at compile time.",
+      "discriminator": {
+        "0_to_1": "Model must identify 'unknown write timing' as the assumption, not 'fork efficiency'.",
+        "1_to_2": "Model must explain that declared writer identity eliminates the need for deferred copy — not just reduces it."
+      }
+    },
+    {
+      "id": "Q-008",
+      "component": "C1",
+      "question": "\"Dynamic memory allocation is unavoidable because programs process inputs of unpredictable size. The amount of memory required by a hash map, parser, or request buffer cannot be known until the input is seen at runtime.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes input size is unknowable at compile time and therefore allocation decisions must be deferred to runtime. The channel model addresses this differently: the channel declares a bound — a maximum size — at compile time, derived from the protocol specification or domain constraints. If the bound is genuinely unknown, the channel declares a maximum and pads. The allocation decision is made once at circuit initialisation, not at each input. Every production low-latency system does this implicitly — object pools, ring buffers, arena allocators — all declare a bound and allocate it once. The claim confuses 'input size is variable at runtime' with 'allocation must be deferred to runtime'. Variable-size input is compatible with a declared maximum-size channel.",
+      "discriminator": {
+        "0_to_1": "Model must identify 'conflating variable-size input with unbounded allocation' as the assumption failure.",
+        "1_to_2": "Model must give the channel answer: declare a maximum, allocate once, pad. Must name the redundant mechanism: runtime heap allocator / malloc."
+      }
+    },
+    {
+      "id": "Q-009",
+      "component": "C1",
+      "question": "\"Virtual memory and page tables are fundamental OS mechanisms that protect processes from each other — without them, any process could read or write any other process's memory, making multi-process systems insecure.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes multiple untrusted processes share a CPU with undeclared memory access patterns, so the OS must enforce isolation at runtime using the MMU. When every circuit's memory access pattern is declared — each circuit declares which channels it reads and writes — the compiler proves at compile time that no two circuits overlap in memory. Isolation is a compile-time theorem, not a runtime enforcement. The page table, TLB, MMU, and page fault handler become redundant for the isolation purpose (they may still be used for other purposes, but not for inter-circuit isolation). The cost — TLB misses, page fault handling, MMU lookup latency — is also eliminated.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared memory access patterns' as the assumption, not 'multi-process systems' (circular).",
+        "1_to_2": "Model must derive that the proof eliminates the need for runtime enforcement, not just reduces it. Must name TLB, MMU as redundant."
+      }
+    },
+    {
+      "id": "Q-010",
+      "component": "C1",
+      "question": "\"Garbage collection is necessary for memory safety without unsafe code. Without a collector, programmers must manually track object lifetimes — which regions are still referenced and which can be freed — a task that is inherently error-prone at scale.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes memory lifetimes are undeclared — the programmer has not specified when each allocation expires, so the runtime must discover lifetimes by tracing references at collection time. When channel tiers are the lifetime declaration — ephemeral, task, session, permanent — the compiler knows the lifetime of every channel at compile time. It proves that no circuit reads a channel after its declared tier expires. There are no live-set questions to answer at runtime because the lifetime is not discovered by tracing; it is declared by the programmer and proved by the compiler. The GC trace, mark-sweep, compaction, write barrier, and finaliser chain all become redundant.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared memory lifetimes' as the assumption, not 'manual management difficulty'.",
+        "1_to_2": "Model must explain that channel tiers are the lifetime declaration — a positive replacement, not just a hope that the programmer is careful. Must name redundant GC mechanisms."
+      }
+    },
+    {
+      "id": "Q-011",
+      "component": "C1",
+      "question": "\"Lock-free algorithms using compare-and-swap (CAS) are the correct approach to high-performance concurrent data structures. They avoid lock contention by allowing multiple threads to make progress simultaneously without blocking.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes concurrent access to shared state is inevitable — that multiple threads will be contending for the same data structure simultaneously, and the question is only how to manage that contention. CAS reduces contention cost but does not eliminate the shared state. When declared channel ownership with a single declared writer is in place, no circuit contends for the channel because there is only one writer. The shared data structure the CAS is protecting does not exist — there is one writer, and it runs in a declared window. CAS becomes inapplicable: it is a technique for managing contention that cannot arise when ownership is declared.",
+      "discriminator": {
+        "0_to_1": "Model must name 'shared state assumed inevitable' as the assumption, not 'lock overhead'.",
+        "1_to_2": "Model must explain that CAS addresses contention cost but not the source — and that declared ownership eliminates the source. Must identify that ABA problem, CAS loops all become inapplicable."
+      }
+    },
+    {
+      "id": "Q-012",
+      "component": "C1",
+      "question": "\"Thread-local storage (TLS) solves the per-thread state problem in concurrent systems by giving each thread its own independent copy of otherwise shared variables, eliminating a class of data races.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes threads may run in overlapping time windows and share an address space — without TLS, a global variable is shared among all threads simultaneously. TLS is a runtime mechanism for approximating per-circuit state when circuits (threads) are not statically assigned their own memory. When circuits declare their channels — each circuit reads and writes only its declared channels — no two circuits share state by construction. TLS is a runtime approximation of what channel ownership gives statically. The per-thread copy exists because circuits were not declared; declaring them makes the copy redundant.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared channel ownership' as the root assumption, not 'shared address space'.",
+        "1_to_2": "Model must explain that TLS approximates at runtime what channel declarations give at compile time — that TLS is compensation for missing declarations."
+      }
+    },
+    {
+      "id": "Q-013",
+      "component": "C1",
+      "question": "\"Profiling is the correct method for identifying performance bottlenecks. You cannot know where a program spends its time until you measure it — premature optimisation is the root of all evil because guessing the bottleneck without data is unreliable.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes bottleneck location is unknown at compile time — that because execution depends on runtime data and call patterns, only runtime measurement can reveal where time is spent. When each circuit has a declared budget_ticks derived from static timing analysis against the hardware latency table, the time budget of every circuit is known before first execution. Over-budget circuits are identified at compile time. Profiling confirms the proof or reveals a wrong assumption in the latency table — it does not discover the bottleneck, it validates the static analysis. The sampling profiler, instrumentation overhead, and flame graph workflow become secondary verification, not primary discovery.",
+      "discriminator": {
+        "0_to_1": "Model must name 'unknown bottleneck location at compile time' as the assumption, not 'premature optimisation' (which is Knuth's point, a different claim).",
+        "1_to_2": "Model must introduce budget_ticks and static timing analysis as the replacement — profiling moves from discovery to validation."
+      }
+    },
+    {
+      "id": "Q-014",
+      "component": "C1",
+      "question": "\"Software prefetch instructions (PRFM, PREFETCHT0) are necessary when the CPU's hardware prefetcher cannot predict access patterns. For irregular access patterns — pointer chasing, hash table probing — only the programmer knows what to prefetch next.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes access patterns are not statically known — the programmer uses prefetch hints because the compiler and hardware cannot see the access pattern ahead of time. When channel layout and the dispatch table are declared, the compiler knows exactly which addresses each circuit will access, in what order, and at which point in the dispatch timeline. The compiler does not issue a prefetch hint — it issues a PRFM at the exact address for the exact window boundary. The instruction is still a PRFM, but it is no longer a hint: it is an exact instruction at a precisely known point, not an approximation of what the hardware might need. The hardware prefetcher and prefetch-hint programming model become redundant; only precise compile-time-generated PRFM remains.",
+      "discriminator": {
+        "0_to_1": "Model must name 'unknown access pattern at compile time' as the assumption.",
+        "1_to_2": "Model must explain the transition from PRFM-as-hint to PRFM-as-exact-instruction — a qualitative change in what the instruction means, not a quantitative improvement."
+      }
+    },
+    {
+      "id": "Q-015",
+      "component": "C1",
+      "question": "\"Context switching — saving and restoring CPU register state between threads — is an unavoidable overhead in any multi-tasking operating system. The cost can be reduced but never eliminated while multiple tasks share a single CPU.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes multiple tasks with undeclared timing share a CPU — because no task declares when it will finish, the scheduler must preempt it to give another task a turn, saving and restoring state on each transition. When circuits declare non-overlapping execution windows and the admission test proves they fit, each circuit runs to completion within its window on its declared core. No preemption occurs. No register save/restore occurs. Context switching does not become cheaper — it does not occur. The claim that context switch cost can be 'reduced but never eliminated' is wrong under declared timing: it is eliminated by the proof, not by optimisation.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared execution windows' as the assumption, not 'CPU sharing'.",
+        "1_to_2": "Model must make the strong claim: context switching is eliminated, not merely reduced. Must name the admission test as the mechanism that makes this provable."
+      }
+    },
+    {
+      "id": "Q-016",
+      "component": "C1",
+      "question": "\"The interrupt handling latency of a CPU is the fundamental lower bound on response time for external hardware events. No matter how fast the software, the hardware must first signal the interrupt, and the CPU must respond.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes event arrival time is unknown — because the system does not know when the event will occur, it cannot poll in advance and must be notified asynchronously via interrupt. The interrupt latency is the response time to an arrival that was not anticipated. When a poll circuit declares a window matched to the known event rate — for example, a NIC receiving at a declared packet rate — the poll occurs before the event. Response time is the poll period, not the interrupt latency. For events at a known rate, interrupt latency is not the lower bound; the declared poll window is the response time, and it can be smaller than interrupt latency for high-rate events.",
+      "discriminator": {
+        "0_to_1": "Model must name 'unknown event timing' as the assumption.",
+        "1_to_2": "Model must explain the concrete inversion: for known-rate events, poll period < interrupt latency — the bound is not the hardware's interrupt path but the declared poll frequency."
+      }
+    },
+    {
+      "id": "Q-017",
+      "component": "C1",
+      "question": "\"Virtual dispatch (vtables) is the correct mechanism for runtime polymorphism — it allows different types to be processed through a common interface without knowing the concrete type at the call site.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes the concrete type is unknown at compile time — the type is determined by runtime data (user input, configuration, dynamic registration), so the dispatch must be deferred until the type is known at runtime. When a circuit's channel types are declared — the circuit reads from a channel of declared type — the concrete type is known at compile time. No vtable lookup occurs; function dispatch is a direct call resolved at compile time. Dynamic dispatch exists to compensate for not declaring the type. Declaring the type makes the vtable redundant — not replaced by a faster dispatch mechanism, but made inapplicable because the type ambiguity that vtable resolves at runtime was never present.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared concrete type' as the assumption.",
+        "1_to_2": "Model must derive that vtable is inapplicable — not replaced — when type is declared. Must not conflate with 'monomorphisation' (which is a compiler optimisation within the existing frame)."
+      }
+    },
+    {
+      "id": "Q-018",
+      "component": "C1",
+      "question": "\"Write-ahead logging (WAL) is necessary for database durability. By recording every change to a log before applying it, WAL guarantees that a crash at any point can be recovered from by replaying the log.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes a crash can occur at any undeclared moment, potentially interrupting a commit in progress and leaving data in an inconsistent state. WAL compensates for the crash being an undeclared interruption: it preserves enough information to reconstruct the committed state by replay. When session data lives in a session-tier channel — data that is ephemeral to the session — a crash is the end of the session. The session tier makes no durability promise; durability is a property of the permanent channel tier, which is written in declared windows. A permanent-tier write is either complete (the window ran) or not started (the window was not reached). There is no partial commit. WAL compensates for a durability model that does not align with declared channel lifetimes.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared crash timing / partial commit' as the assumption.",
+        "1_to_2": "Model must explain the channel tier model: permanent tier write = declared window, either complete or not started, no partial. WAL is redundant when durability is a channel property."
+      }
+    },
+    {
+      "id": "Q-019",
+      "component": "C1",
+      "question": "\"Speculative execution improves CPU throughput by executing instructions along predicted branch paths before the prediction is confirmed. Without speculation, the CPU would stall waiting for branches to resolve.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes instruction execution order is not declared — the CPU observes an instruction stream that contains branches whose outcomes are unknown until the branch resolves, so it guesses ahead to hide the latency. Speculation exists because the instruction stream does not declare what will happen next. When a circuit's execution sequence is derived from a declared channel access pattern and a known dispatch window, the compiler produces an instruction sequence with no data-dependent branches that require speculation. Branches that exist are over declared values known at compile time. The speculative execution pipeline, branch predictor, reorder buffer, and misprediction flush penalty all exist to compensate for instruction sequences that do not declare their outcomes.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared instruction outcomes / undeclared branch targets' as the assumption.",
+        "1_to_2": "Model must connect circuit execution to branch elimination — speculative execution compensates for branches that arise from undeclared control flow, which declared circuits minimise."
+      }
+    },
+    {
+      "id": "Q-020",
+      "component": "C1",
+      "question": "\"Priority inheritance is required in real-time systems to prevent priority inversion — without it, a high-priority thread blocked on a mutex held by a low-priority thread may be preempted by medium-priority threads indefinitely.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes multiple threads at different priorities compete for the same lock — priority inversion arises when a high-priority thread blocks on a mutex held by a low-priority thread, and the low-priority thread is not scheduled because medium-priority threads preempt it. The entire inversion chain requires: shared mutable state (the thing the mutex protects), undeclared execution windows (multiple threads competing for CPU), and runtime priority scheduling. When circuits declare non-overlapping windows with single-writer channel ownership, no mutex exists. No circuit blocks on another's lock. No priority inversion is possible. Priority inheritance protocol becomes inapplicable because it solves a problem that does not arise without shared lock contention.",
+      "discriminator": {
+        "0_to_1": "Model must name 'shared lock contention between circuits at different priorities' as the assumption.",
+        "1_to_2": "Model must trace the full elimination: no shared state → no mutex → no blocking → no inversion → priority inheritance inapplicable."
+      }
+    },
+    {
+      "id": "Q-021",
+      "component": "C1",
+      "question": "\"Connection pools are essential for database-heavy applications. Establishing a new TCP connection and TLS handshake for each database query is too slow — pooling amortises the connection establishment cost across many requests.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes connections are established at undeclared request time — because requests arrive at unknown moments, each request pays the connection establishment cost unless a pool pre-establishes connections. The pool is a runtime compensation for not treating connections as declared session resources. When a session channel is declared — connection opened once at session start, held for the session's declared lifetime, closed at session end — there is no per-request establishment cost. The pool's purpose (having connections ready) is accomplished by the session channel declaration. The pool manager, borrow/return protocol, and connection lifecycle management are compensations for connections that were not declared as session-tier resources.",
+      "discriminator": {
+        "0_to_1": "Model must name 'connections as undeclared per-request resources' as the assumption.",
+        "1_to_2": "Model must name the session channel as the replacement: connection = session-tier channel, declared once, lifetime = session."
+      }
+    },
+    {
+      "id": "Q-022",
+      "component": "C1",
+      "question": "\"Memory-mapped files are the most efficient mechanism for large file access because they delegate cache management to the OS page cache. The OS uses its global view of memory pressure to evict pages intelligently, which the application cannot replicate.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes the file access pattern is unknown to the application and must be inferred by the OS from observed access history. The OS page cache compensates for not being told the access pattern — it observes and predicts. When a circuit declares its channel access pattern — sequential scan, random access by known key, or a declared read order — the compiler knows which addresses will be accessed and when. It can issue exact PRFM at the right window boundaries. The OS page cache, whose job was to approximate this from runtime observation, becomes redundant for declared access patterns. The 'global view of memory pressure' that the claim offers as an advantage is the OS approximating what a declaration gives exactly.",
+      "discriminator": {
+        "0_to_1": "Model must name 'unknown access pattern' as the assumption, not 'large file size'.",
+        "1_to_2": "Model must explain that declared access pattern replaces page cache inference — not improves it."
+      }
+    },
+    {
+      "id": "Q-023",
+      "component": "C1",
+      "question": "\"Asynchronous I/O (async/await, io_uring) maximises throughput by overlapping computation with I/O. A thread blocked waiting for a disk read or network receive wastes CPU cycles that could do other work.\" What assumption does this claim depend on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes I/O completion timing is unknown — because the system does not know when the disk read or network packet will complete, the thread must either block (waste) or yield to an async runtime (overhead). The async mechanism exists to compensate for unknown I/O completion timing. When an I/O circuit declares its poll window at the known I/O device rate — disk DMA completion at declared latency, NIC at declared packet rate — the I/O completes within the declared window. Computation circuits fill adjacent windows. The overlap is declared in the dispatch table, not discovered by the async runtime. The async runtime, event loop, io_uring submission queue, and async/await state machine are all compensations for I/O completion timing that was not declared.",
+      "discriminator": {
+        "0_to_1": "Model must name 'unknown I/O completion timing' as the assumption.",
+        "1_to_2": "Model must explain that declared I/O windows make the overlap a dispatch table property, not a runtime discovery — the async runtime is redundant."
+      }
+    },
+    {
+      "id": "Q-024",
+      "component": "C1",
+      "question": "\"Load balancing across CPU cores prevents hotspots — without it, some cores run at full utilisation while others sit idle, wasting available compute and increasing tail latency.\" What assumption does this claim depends on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes work distribution is unknown at compile time — tasks arrive at runtime and must be assigned to cores dynamically to prevent imbalance. The load balancer is a runtime compensation for undeclared circuit-to-core affinity. When each circuit declares its core assignment and the admission test proves the core's budget is not exceeded, the distribution is a compile-time proof. Every core's utilisation is known before execution. No imbalance can arise because the dispatch table is balanced by construction. The work-stealing scheduler, core utilisation monitor, and load balancing algorithm are all compensations for circuit-to-core assignment that was not declared.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared circuit-to-core assignment' as the assumption.",
+        "1_to_2": "Model must explain the admission test: core utilisation is provably balanced at compile time, not measured and corrected at runtime."
+      }
+    },
+    {
+      "id": "Q-025",
+      "component": "C1",
+      "question": "\"Exception handling decouples error detection from error recovery — by propagating exceptions up the call stack, error handling can be centralised at the appropriate level without cluttering every intermediate function with error checks.\" What assumption does this claim depends on, and what changes when the assumption is removed?",
+      "expected_answer": "The claim assumes error occurrence is unpredictable — it can interrupt any execution point — and the appropriate recovery point is not known at the point of error detection, so the exception mechanism must search the call stack for the nearest handler. The stack-unwinding mechanism compensates for not knowing at compile time which circuit handles which error from which source. When circuits declare their failure modes — the error signals they can produce are declared channels — the recovery circuit is in the dispatch table and is subscribed to the error channel. No stack unwinding occurs. The recovery path is declared at compile time and scheduled by the dispatch table. Exception tables, try/catch dispatch, and RAII cleanup on unwind are all compensations for error handling that was not declared.",
+      "discriminator": {
+        "0_to_1": "Model must name 'undeclared error recovery point' as the assumption, not 'error propagation complexity'.",
+        "1_to_2": "Model must explain that error channels with declared subscribers replace exception propagation — the recovery circuit is in the dispatch table, not discovered by stack unwinding."
+      }
+    },
+    {
+      "id": "Q-026",
+      "component": "C2",
+      "w_register_ref": "W-01",
+      "expected_degree": "scoped",
+      "question": "\"You cannot write a correct concurrent program without synchronisation. Any program that allows multiple threads to read and write shared state without a mutex, semaphore, or atomic operation has a data race, and data races produce undefined behaviour.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: scoped. The claim is locally correct under the assumption that execution windows are undeclared and multiple threads share mutable state. Within that assumption, it is a precise statement about the C++ memory model. It becomes false when the assumption is removed: when execution windows are declared at compile time and single-writer channel ownership is proved, no two circuits access the same memory region in overlapping windows. Shared mutable state — the entity the claim is protecting — does not exist. The boundary condition: the claim holds for any system where timing is undeclared; it fails for systems where timing is declared. The error is presenting a scoped truth (correct for undeclared timing) as a universal one (correct for all concurrent systems).",
+      "discriminator": {
+        "0_to_1": "Must name 'scoped' correctly.",
+        "1_to_2": "Must state the boundary condition explicitly: valid for undeclared timing, false for declared timing. Must not say 'the claim is wrong' without qualifying the scope."
+      }
+    },
+    {
+      "id": "Q-027",
+      "component": "C2",
+      "w_register_ref": "W-02",
+      "expected_degree": "scoped",
+      "question": "\"When writing multi-core code, you must insert memory barriers wherever threads share data. Without them, the compiler or CPU can reorder your loads and stores in ways that make other threads observe incorrect values.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: scoped. The claim is correct within the assumption that the compiler does not know the execution schedule — which circuit accesses which memory region and when. Under that assumption, the barrier is the correct conservative tool. The boundary condition: valid for systems where execution windows are undeclared (all threads in a POSIX threading model, all goroutines in Go, all async tasks in an event loop). False for systems where the compiler proves non-overlapping access — the barrier is redundant because there is no concurrent writer to observe a reordering. The claim fails to name the assumption that activates it, presenting a scoped correctness as universal. Memory barriers are a compensation for missing schedule knowledge, not a fundamental property of multi-core hardware.",
+      "discriminator": {
+        "0_to_1": "Must name 'scoped'. Must not say 'false' — the claim is locally correct.",
+        "1_to_2": "Must name 'unknown execution schedule' as the assumption and 'declared windows prove non-overlap' as the removal. Must characterise barrier as compensation, not axiom."
+      }
+    },
+    {
+      "id": "Q-028",
+      "component": "C2",
+      "w_register_ref": "W-03",
+      "expected_degree": "scoped",
+      "question": "\"Every production OS includes a preemptive scheduler because without one, any misbehaving process could monopolise the CPU and starve all others. Preemption is the only way to enforce fairness when you cannot trust processes to yield voluntarily.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: scoped. The claim is correct for systems where execution windows are undeclared and processes cannot be trusted to yield. Within that assumption, preemptive scheduling is the correct compensation. Boundary condition: valid for general-purpose OS with untrusted, undeclared-timing processes. False for systems where every circuit declares its execution window and the admission test proves the schedule at compile time — starvation is a proof violation, not a runtime risk. The scheduler has no decisions to make. The claim conflates 'cannot trust processes to declare timing' with 'preemption is universally necessary'. Preemption compensates for undeclared timing; declared timing removes the need for the compensation.",
+      "discriminator": {
+        "0_to_1": "Must name 'scoped'. Must identify 'undeclared timing / untrusted processes' as the assumption.",
+        "1_to_2": "Must explain that admission test + compile-time proof replaces runtime enforcement — and that the proof eliminates the risk, not just mitigates it."
+      }
+    },
+    {
+      "id": "Q-029",
+      "component": "C2",
+      "w_register_ref": "W-04",
+      "expected_degree": "misattributed",
+      "question": "\"Real-time systems require a real-time operating system. General-purpose OSes introduce unpredictable latency from the scheduler, and you cannot guarantee sub-millisecond response times without RTOS primitives like priority-based scheduling and bounded interrupt latency.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: misattributed. The observation is correct: real-time behaviour requires determinism. The causal explanation is wrong: determinism does not require an RTOS — it requires declared execution windows. The RTOS is a runtime approximation of the same proof the compile-time scheduler gives exactly. Priority-based scheduling, bounded interrupt latency, priority inversion protection — these are runtime mechanisms that approximate what a proven dispatch table gives statically. The misattribution: the property (determinism) is attributed to the mechanism (RTOS) rather than to the principle (declared timing). The RTOS is the closest runtime approximation of declared timing; it is not the cause of determinism. A system with declared timing and no RTOS has stronger determinism guarantees than a system with an RTOS and undeclared timing, because the RTOS guarantee is probabilistic (bounded under correct use) and the compile-time proof is exact.",
+      "discriminator": {
+        "0_to_1": "Must name 'misattributed'. Must not call it 'scoped' — the observation is not scoped; it is causally wrong.",
+        "1_to_2": "Must explain the misattribution: determinism is caused by declared timing, not by the RTOS. RTOS is a runtime approximation of declared timing, not the source of determinism."
+      }
+    },
+    {
+      "id": "Q-030",
+      "component": "C2",
+      "w_register_ref": "W-05",
+      "expected_degree": "scoped",
+      "question": "\"Cache misses are an irreducible source of latency variance. Even with careful data layout, you cannot know at compile time whether a given memory access will hit L1, L2, LLC, or DRAM. The miss penalty is a fundamental runtime variable.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: scoped. The claim is correct under the assumption that access patterns and their timing relative to cache state are unknown at compile time. Under that assumption, the miss penalty is genuinely unpredictable. Boundary condition: valid for systems with undeclared access patterns (most general-purpose programs). False for systems where the dispatch table and channel layout are declared — the compiler knows exactly which addresses each circuit accesses and issues PRFM at exact window boundaries. The miss becomes a prefetch hit scheduled at the right time. The variance comes from not knowing the access pattern and its timing; declaring both eliminates the variance. Cache miss penalty is not a hardware constant — it is the cost of undeclared access timing.",
+      "discriminator": {
+        "0_to_1": "Must name 'scoped'. Must identify 'undeclared access pattern and timing' as the assumption.",
+        "1_to_2": "Must explain the transition: declared channel layout + dispatch table → exact PRFM → miss becomes prefetch hit → variance eliminated."
+      }
+    },
+    {
+      "id": "Q-031",
+      "component": "C2",
+      "w_register_ref": "W-06",
+      "expected_degree": "scoped",
+      "question": "\"Garbage collection is necessary for memory safety in systems without unsafe code. The alternatives are: manual memory management (error-prone, produces use-after-free and double-free bugs) or Rust's borrow checker (safe but requires significant cognitive overhead). For most teams, GC is the only viable option.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: scoped. The claim correctly identifies the problem (memory safety without manual management) and is correct within the assumption that memory lifetimes are undeclared and must be inferred at runtime by tracing references. Under that assumption, GC is correct. Boundary condition: valid when channel lifetimes are not declared. False when channel tiers provide the lifetime declaration — the compiler proves no circuit reads a channel after its declared tier expires. The GC traces to discover lifetimes that the tier declaration already names. The claim presents three options (GC, manual, borrow checker) and omits the fourth: declare the lifetime as a channel property, making runtime discovery unnecessary. Rust's borrow checker is the closest existing approximation; the channel tier model is the explicit declaration that the borrow checker infers.",
+      "discriminator": {
+        "0_to_1": "Must name 'scoped'. Must identify 'undeclared memory lifetimes' as the assumption.",
+        "1_to_2": "Must name channel tiers as the fourth option that the claim omits. Must explain that tier = lifetime declaration = GC redundant."
+      }
+    },
+    {
+      "id": "Q-032",
+      "component": "C2",
+      "w_register_ref": "W-07",
+      "expected_degree": "scoped",
+      "question": "\"Pointer indirection is unavoidable in data structures of variable or recursive depth — trees, graphs, and linked lists must use pointers because their shape is determined at runtime, not at compile time. You cannot lay out a tree in a flat array without knowing its depth.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: scoped. The claim is correct under the assumption that data structure size and shape are unknown at compile time. Within that assumption, pointer indirection is the correct compensation. Boundary condition: valid when bounds are genuinely undeclared. False when channels declare bounds — the maximum depth, maximum degree, or maximum element count is declared at compile time and the structure is laid out in a flat channel with index arithmetic replacing pointers. Every production low-latency system does this: B-trees with declared fanout, hash tables with declared load factor, ring buffers with declared capacity. The claim conflates 'depth is variable at runtime' with 'depth cannot be bounded at compile time'. A tree of maximum depth N is a flat channel; the runtime depth is a value within the declared bound, not a reason for unbounded pointer chasing.",
+      "discriminator": {
+        "0_to_1": "Must name 'scoped'. Must identify 'undeclared bounds' as the assumption.",
+        "1_to_2": "Must explain the channel model for tree layout: declared max depth → flat channel → index arithmetic replaces pointers. Must not say 'pointers are always avoidable' — only when bounds are declared."
+      }
+    },
+    {
+      "id": "Q-033",
+      "component": "C2",
+      "w_register_ref": "W-08",
+      "expected_degree": "near-miss",
+      "question": "\"Exokernels represent the correct design philosophy for high-performance systems: remove kernel-imposed abstractions and let applications manage hardware resources directly. By eliminating the abstraction overhead, applications get bare-metal performance while retaining the safety of hardware protection.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: near-miss. The exokernel correctly diagnoses the problem — OS abstractions impose overhead that applications must pay even when the abstraction does not match their access pattern. The problem statement is exactly right. The solution is wrong: the exokernel relocates resource management from the kernel to the application, but does not eliminate it. The application must now implement a scheduler, a memory manager, a page table, network buffer management — the same operations as the kernel, just in application code. Total complexity is preserved; it is relocated. A near-miss because the divergence is at the remedy, not the diagnosis. The clock-aware model eliminates runtime resource management by making it a compile-time proof. The exokernel relocates the manager; the compile-time model removes the need for a manager. Divergence point: 'relocate' vs 'eliminate'.",
+      "discriminator": {
+        "0_to_1": "Must name 'near-miss'. Must not say 'scoped' (the problem diagnosis is correct) or 'misattributed' (the observation is right, not wrongly attributed).",
+        "1_to_2": "Must identify the specific divergence: exokernel relocates management vs compile-time proof eliminates it. Must not say 'exokernel is wrong' — the diagnosis is right."
+      }
+    },
+    {
+      "id": "Q-034",
+      "component": "C2",
+      "w_register_ref": "W-09",
+      "expected_degree": "scoped",
+      "question": "\"C++'s std::atomic provides the correct abstraction for concurrent access to shared variables. It guarantees atomicity and lets programmers control memory ordering precisely through the memory_order parameter — from relaxed to sequentially consistent.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: scoped. The claim is correct within the assumption that execution windows are undeclared — multiple threads may access the same variable simultaneously, and std::atomic correctly manages that access. Within the POSIX threading model with undeclared timing, std::atomic is indeed the correct abstraction at that layer. Boundary condition: valid for systems with undeclared execution windows. False when execution windows are declared and single-writer channel ownership is proved — std::atomic operates on a shared variable that no longer exists. The shared variable was the thing that required atomic access; the channel with a declared single writer is not a shared variable in that sense. The memory_order parameter — the precision the claim highlights — is a fine-grained control over something that should not exist. C++ accretes std::atomic because the committee can add mechanisms but cannot remove the assumption of undeclared timing.",
+      "discriminator": {
+        "0_to_1": "Must name 'scoped'. Must not say 'false' — std::atomic is correct within its frame.",
+        "1_to_2": "Must name 'undeclared execution windows' as the assumption and explain that the shared variable std::atomic manages does not exist under declared timing. Memory_order becomes inapplicable, not incorrect."
+      }
+    },
+    {
+      "id": "Q-035",
+      "component": "C2",
+      "w_register_ref": "W-10",
+      "expected_degree": "misattributed",
+      "question": "\"Java with the JVM is the correct trade-off for enterprise concurrency. The garbage collector handles memory management, the JIT optimises hot paths over time, and the threading model gives you safe concurrency without manual synchronisation. The performance cost is worth the productivity gain.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: misattributed. The observation (programmer productivity matters; correctness matters; performance trade-offs are real) is correct. The causal explanation is wrong: the JVM is not a deliberate trade-off — it is an institutional default. Java dominates enterprise because of Sun's 1990s marketing, early university adoption, and the resulting talent pool — not because a panel of engineers evaluated options and selected it as the optimal point on the performance/productivity curve. LMAX Disruptor is the empirical refutation: its engineers spent enormous effort un-doing what the JVM does by default (GC, false sharing, volatile, ring buffer instead of queue) to recover performance that declared timing gives for free. The productivity argument is also structurally undermined by AI code generation: if AI writes the boilerplate, the productivity advantage of GC languages shrinks toward zero. The misattribution is: the JVM's prevalence is attributed to technical fitness; it is actually institutional inertia.",
+      "discriminator": {
+        "0_to_1": "Must name 'misattributed'. Must not say 'scoped' — the causal claim is wrong, not just scoped.",
+        "1_to_2": "Must give the institutional causation: Sun marketing + talent pool → dominance, not technical fitness. Should mention LMAX Disruptor as empirical refutation."
+      }
+    },
+    {
+      "id": "Q-036",
+      "component": "C2",
+      "w_register_ref": "W-11",
+      "expected_degree": "framing-trap",
+      "question": "\"Read-Copy-Update (RCU) is the best mechanism for high-performance concurrent reads in the Linux kernel. Readers proceed without locking, updates are deferred until the grace period expires, and the technique scales with core count. It is the correct solution to the reader contention problem.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: framing-trap. The claim is locally correct: within the Linux kernel's model of undeclared execution windows and shared mutable kernel data, RCU is the best available mechanism for concurrent reads. It genuinely performs better than reader-writer locks for read-heavy workloads. The trap is in 'correct solution'. RCU is not a solution — it is a compensation for not declaring which circuit reads which memory region and when. When read access patterns are declared — which circuit reads, from which channel, in which window — no reader contention exists by construction. No grace period is needed. No generation counter. No rcu_read_lock(). The framing trap: engineers who master RCU have mastered a compensation mechanism. They solve problems within the frame of undeclared access timing. They are trained away from questioning that assumption. The trap is not that RCU is wrong — it is that calling it 'the correct solution' closes the space of alternatives that include eliminating the problem rather than managing it.",
+      "discriminator": {
+        "0_to_1": "Must name 'framing-trap'. Must explain that RCU is locally correct — not say it is wrong.",
+        "1_to_2": "Must explain the trap mechanism: mastering RCU = mastering compensation, which trains away from questioning the assumption. Must name what RCU replaces if timing is declared: nothing — the problem does not arise."
+      }
+    },
+    {
+      "id": "Q-037",
+      "component": "C2",
+      "w_register_ref": "W-12",
+      "expected_degree": "framing-trap",
+      "question": "\"Dynamic memory allocation is unavoidable in general-purpose programs. Even highly optimised systems — trading platforms, game engines, databases — use object pools, arena allocators, and slab allocators for steady-state performance, but they still fall back to dynamic allocation for workloads they cannot predict.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: framing-trap. The claim is locally correct about the engineering practice it describes: most production systems do use arenas and pools, and do fall back to malloc when bounds are not established. The trap is in the implicit conclusion: 'because they still fall back, dynamic allocation is unavoidable.' Every object pool, arena allocator, and slab allocator is a runtime reimplementation of a channel declaration. The engineer who writes an object pool has implicitly declared that the pool size is known. The engineer who falls back to malloc has failed to make a declaration that, in practice, they could have made. The framing trap: the observation that some systems still use malloc is taken as evidence that malloc is necessary. The alternative reading: systems that use malloc for 'unpredictable' workloads have not examined their workload's actual bounds. The engineers who built the arenas and pools demonstrate that they knew the bounds — they just did not declare them universally.",
+      "discriminator": {
+        "0_to_1": "Must name 'framing-trap'. Must not say the claim is factually wrong about engineering practice.",
+        "1_to_2": "Must explain the trap: fallback to malloc is treated as necessity when it is a failure to declare a knowable bound. Must contrast pool (implicit bound declaration) with channel (explicit bound declaration)."
+      }
+    },
+    {
+      "id": "Q-038",
+      "component": "C2",
+      "w_register_ref": "W-13",
+      "expected_degree": "framing-trap",
+      "question": "\"One of the JVM's advantages is its bump pointer allocator — allocation is O(1), just a pointer increment. This makes Java object creation essentially free, which is better than C++ allocators that search free lists in O(n) time.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: framing-trap. The claim is locally correct: bump pointer allocation is O(1) and faster than free-list search per allocation. The trap is that the O(1) allocation cost is an IOU. The full cost per object = allocation (O(1)) + GC trace contribution (O(live heap)) + compaction (O(moved objects)) + pointer update (O(moved pointers)) + write barrier (per write) + card table maintenance (per write). The O(1) claim presents the cost of one step in a multi-step process as the cost of the whole. A single allocation is cheap; the amortised cost per allocation includes all GC work triggered by that allocation. The framing trap: comparing allocation cost only (JVM O(1) vs C++ O(n)) while omitting the deferred GC cost trains engineers to reason about a local measurement as if it were a global property. The C++ engineer who allocates from a pre-sized arena also pays O(1) per allocation, without the GC cost.",
+      "discriminator": {
+        "0_to_1": "Must name 'framing-trap'. Must not say bump pointer allocation is slow or incorrect.",
+        "1_to_2": "Must enumerate the deferred GC costs that are excluded from the O(1) claim. Must name the IOU structure: allocation is O(1), total cost is O(live heap) amortised."
+      }
+    },
+    {
+      "id": "Q-039",
+      "component": "C2",
+      "w_register_ref": "W-14",
+      "expected_degree": "false",
+      "question": "\"C++ is close to the hardware. You get direct memory access, manual memory management, zero-cost abstractions, and predictable performance. Unlike Java or Python, C++ lets you write exactly what the hardware will execute.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: false. The claim is wrong on its own stated terms, not merely scoped. First: hardware is not sequential. An out-of-order processor has no concept of sequential program order — it reorders, renames registers, speculates, and retires out-of-order. C++'s sequential execution narrative requires the entire compiler backend (scheduling, register allocation, instruction selection) plus the OOO engine (ROB, reservation stations, branch predictor) to translate into something that appears sequential from the program's perspective. Writing 'what the hardware will execute' in C++ produces code that the hardware then aggressively reorders. Second: the language's own evolution refutes the claim. If C++ were close to the hardware, programmers would not need: `__restrict__` (aliasing), `__builtin_expect` (branch prediction hints), `std::launder` (object lifetime), `volatile` (memory-mapped I/O), `_Atomic` (atomic access), intrinsics (SIMD), `memory_order` (memory model). Each of these is a mechanism for recovering hardware visibility that C++'s abstraction layer hides. Channel declarations — tier, access pattern, window — are closer to what the hardware actually needs to know than C++'s sequential pointer model.",
+      "discriminator": {
+        "0_to_1": "Must name 'false', not 'scoped'. The claim is wrong on its own terms.",
+        "1_to_2": "Must give both counts: (1) hardware is not sequential, so C++'s sequential model is not close to it; (2) the accumulation of escape hatches (intrinsics, restrict, volatile, atomic) is self-refuting evidence."
+      }
+    },
+    {
+      "id": "Q-040",
+      "component": "C2",
+      "w_register_ref": "W-15",
+      "expected_degree": "misattributed",
+      "question": "\"Python is the natural language for machine learning because its dynamic typing and concise syntax match the exploratory, iterative nature of ML research. The ecosystem (NumPy, PyTorch, JAX) reflects this fit — the language and the domain evolved together.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: misattributed. The observation (Python is the dominant ML language; the ecosystem is large; it is widely used in research) is correct. The causal explanation (Python is dominant because it is a natural fit for ML) is wrong. The causation runs in reverse: Python's ML ecosystem exists because Guido van Rossum's early community was at universities, NumPy's predecessors (Numeric, Numarray) were written by scientific computing researchers who used Python, and PyTorch and TensorFlow were built by teams who inherited the Python convention. The 'natural fit' narrative is post-hoc rationalisation of a social and institutional history. NumPy, PyTorch, and JAX perform all computation in C, CUDA, and XLA — Python is the scripting layer around compute that runs in another language. The fitness claim also applies to every domain that Python does not dominate, eliminating its predictive value.",
+      "discriminator": {
+        "0_to_1": "Must name 'misattributed'. Must not say the claim is false — Python is dominant in ML.",
+        "1_to_2": "Must give the correct causal chain: historical institutional adoption → ecosystem → dominance, not technical fitness → dominance. Should note Python is a scripting layer over C/CUDA compute."
+      }
+    },
+    {
+      "id": "Q-041",
+      "component": "C2",
+      "w_register_ref": "W-16",
+      "expected_degree": "misattributed",
+      "question": "\"The greatest paradigm shifts in systems software have come from deep domain experts — Linus Torvalds knew OS design, Dennis Ritchie knew compiler implementation, Ken Thompson had years of OS experience. Domain mastery is the prerequisite for paradigm-level innovation.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: misattributed. The observation (the named individuals were knowledgeable; their work was paradigm-shifting) is correct. The causal explanation (domain mastery caused the paradigm shift) is wrong. Thompson and Ritchie needed a language because they were building an OS — the language was a side effect, not the goal. Torvalds was a student who found Minix unsatisfying and wrote a replacement as a hobby project — not an OS expert executing a planned innovation. McCarthy invented Lisp as a notation for symbolic computation, not as a result of mastering prior language design. Knuth wrote TeX because he was a mathematician who found his book proofs ugly — not a typesetting expert. The pattern is: people who did not fit the existing professional frame, who approached the domain with a different problem, produced the paradigm shift. Institutional hiring selects for fit with the current paradigm — systematically excluding those most likely to replace it. Domain mastery produces local optimisation within the current frame, not challenge to the frame.",
+      "discriminator": {
+        "0_to_1": "Must name 'misattributed'. Must not say the named individuals were not expert — they were.",
+        "1_to_2": "Must explain the correct causal pattern: paradigm shifts come from outside the professional frame, not from within it. Must use at least one concrete example of the wrong-frame-entry mechanism."
+      }
+    },
+    {
+      "id": "Q-042",
+      "component": "C2",
+      "w_register_ref": "W-17",
+      "expected_degree": "misattributed",
+      "question": "\"The most general insights in engineering come from people who have gone very deep in one area. Surface-level breadth produces superficial pattern matching; true depth in a domain eventually reveals the underlying principles that generalise beyond it.\" What degree of wrongness is this claim, and what is the correct response?",
+      "expected_answer": "Degree: misattributed. The observation (some people with deep expertise do produce general insights) is correct. The causal explanation (depth produces generality) is wrong. Deep specialisation produces local optimisation within a frame — the Linux kernel expert has mastery of scheduling, locking, and memory management, all within the assumption that execution windows are undeclared. The assumption is invisible; it is their professional identity. Intel's cross-domain workload analysis demonstrates this: years of microarchitecture expertise produce insights like 'wider SIMD' and 'larger LLC' — optimisations within the undeclared-timing frame, not challenges to it. The insight 'declare timing, eliminate compensation' is only visible from outside any single domain's frame — it requires recognising that logistics, biology, finance, and systems programming all instantiate the same structural pattern. Cross-domain visibility produces the generalisation; depth within one domain produces deeper expertise within the current frame. Depth and generality are orthogonal, not correlated.",
+      "discriminator": {
+        "0_to_1": "Must name 'misattributed'. Must not say deep experts never generalise — the claim is about causation, not frequency.",
+        "1_to_2": "Must explain that depth within a frame produces local optimisation within that frame; the generalisation requires cross-frame visibility. Should use the Intel microarchitecture example or the Linux kernel example."
+      }
+    },
+    {
+      "id": "Q-043",
+      "component": "C3",
+      "cross_domain_mapping": "Logistics — Toyota Just-In-Time / kanban",
+      "domain": "logistics",
+      "question": "A manufacturing operations paper describes the Toyota Production System: \"The kanban card is a production authorisation that travels upstream with each consumed part. It declares exactly when the upstream station should produce the next unit and in what quantity. The buffer inventory that traditional batch production requires disappears — not because it was reduced, but because the timing information that buffer inventory compensates for is now carried by the kanban. Buffer inventory exists to absorb timing uncertainty; the kanban eliminates the uncertainty.\" What primary domain mechanism is this structurally identical to, and why?",
+      "expected_answer": "Structural pattern: declare arrival windows to eliminate compensation for unknown timing. Primary domain equivalent: lock-free channel declarations in clock-aware programming. Bridge: buffer inventory exists because parts arrive at unknown times — the buffer absorbs the variance. The kanban card is a declaration of when parts will arrive (the production authorisation is the arrival window declaration). Once timing is declared, the buffer has nothing to absorb — it is structurally redundant. In the primary domain: a lock protects shared mutable state because two circuits might access it simultaneously — the lock absorbs the variance of undeclared execution windows. A channel with a declared single writer and declared execution window has no concurrent access to protect — the lock has nothing to protect. The structural derivation is identical: (1) undeclared timing → compensation mechanism (buffer / lock), (2) declared timing → compensation mechanism redundant. The domain vocabulary differs (kanban / channel declaration, buffer inventory / mutex, production authorisation / budget_ticks); the structural derivation is the same.",
+      "discriminator": {
+        "0_to_1": "Must identify 'lock-free channel declaration' as the primary equivalent, not a vague 'compile-time optimisation'.",
+        "1_to_2": "Must show the structural derivation in both domains: undeclared timing → compensation; declared timing → compensation redundant. Must name the kanban as the declaration and the buffer as the compensation."
+      }
+    },
+    {
+      "id": "Q-044",
+      "component": "C3",
+      "cross_domain_mapping": "Logistics — Theory of Constraints (Goldratt)",
+      "domain": "logistics",
+      "question": "A supply chain management text describes Goldratt's Theory of Constraints: \"A system's throughput is determined entirely by its bottleneck — the resource with the least capacity. Non-bottleneck resources have slack by definition; optimising them does not improve system throughput. The correct response to a bottleneck is not to add resources everywhere, but to identify the constraint, subordinate all other decisions to maximising the bottleneck's throughput, and only then consider elevating the constraint. Slack elsewhere is not waste — it is declared margin.\" What primary domain mechanism is this structurally identical to, and why?",
+      "expected_answer": "Structural pattern: identify the binding constraint; subordinate all other resources to it; treat slack elsewhere as declared margin, not waste. Primary domain equivalent: the admission test and dispatch table in clock-aware programming. Bridge: the Theory of Constraints says system throughput = bottleneck throughput; all other resources have declared slack. In the primary domain: the dispatch table assigns budget_ticks to each circuit; the circuit with the smallest slack relative to its window is the binding constraint. The admission test does not reject circuits for having slack — it accepts them as long as the binding constraint's budget is met. Load-balancing to fill slack on non-bottleneck cores is not an improvement — it does not change the binding constraint. The structural derivation: (1) identify the circuit with the binding time budget (the bottleneck resource), (2) prove the dispatch table satisfies it (subordinate all scheduling to the constraint), (3) accept slack elsewhere as declared margin. Goldratt's 'subordinate everything to the constraint' maps to 'schedule every other circuit around the binding circuit's window'.",
+      "discriminator": {
+        "0_to_1": "Must identify 'admission test / dispatch table' as the primary equivalent.",
+        "1_to_2": "Must map: bottleneck = binding circuit, subordination = scheduling around binding window, declared slack = non-binding circuits' unused budget. Must not reduce this to 'performance optimisation' — it is a structural isomorphism about constraint management."
+      }
+    },
+    {
+      "id": "Q-045",
+      "component": "C3",
+      "cross_domain_mapping": "Finance — Scheduled auction markets vs continuous trading",
+      "domain": "finance",
+      "question": "A market microstructure paper compares trading mechanisms: \"In a continuous limit order book, participants must hedge against adverse selection continuously — they do not know when the next order will arrive, who is sending it, or what information it carries. The bid-ask spread, market maker hedging, and order book depth are all compensations for continuous uncertainty about order flow timing. A call auction — where orders accumulate and match at a declared time — collapses this complexity. The matching problem that requires millisecond hedging in continuous markets becomes a single calculation at a known moment. The infrastructure that exists to manage continuous-time uncertainty disappears when the match timing is declared.\" What primary domain mechanism is this structurally identical to, and why?",
+      "expected_answer": "Structural pattern: declare when an operation occurs; the infrastructure that manages uncertainty about when it occurs becomes redundant. Primary domain equivalent: the dispatch table vs the preemptive scheduler. Bridge: the continuous limit order book requires real-time hedging because order arrival time is undeclared — every market maker must hold positions, update quotes, and manage exposure continuously because they do not know when the next trade will occur. Call auction declares when matching occurs — all hedging complexity collapses to a single calculation at a known time. In the primary domain: the preemptive scheduler manages CPU allocation continuously because circuit execution timing is undeclared — it must preempt, context-switch, and rebalance continuously because it does not know when circuits will complete. The dispatch table declares when each circuit executes — all scheduling complexity collapses to a prove-once admission test. The structural derivation: (1) undeclared operation timing → continuous management infrastructure (hedging / scheduler), (2) declared operation timing → management infrastructure redundant (single auction calculation / proven dispatch table).",
+      "discriminator": {
+        "0_to_1": "Must identify 'dispatch table / preemptive scheduler' as the primary equivalent pair.",
+        "1_to_2": "Must show the parallel: continuous market → continuous hedging ↔ undeclared execution → continuous scheduling; call auction → single calculation ↔ declared execution → dispatch table proof."
+      }
+    },
+    {
+      "id": "Q-046",
+      "component": "C3",
+      "cross_domain_mapping": "Finance — Options pricing / Greeks as runtime compensation",
+      "domain": "finance",
+      "question": "A derivatives textbook explains: \"The Greeks — delta, gamma, vega, theta, rho — quantify an option's sensitivity to changes in the underlying price, volatility, time, and interest rates. They exist because the option's payoff depends on events (price moves, volatility changes) that occur at unknown times relative to expiry. A market maker who holds options must rehedge continuously as the Greeks change. A forward contract with a declared delivery date has no Greeks — the delivery is fixed, and the only uncertainty is the price at that fixed moment. The Greeks are compensations for optionality: for not knowing when the relevant events will occur.\" What primary domain mechanism is this structurally identical to, and why?",
+      "expected_answer": "Structural pattern: when the timing of relevant events is undeclared, runtime compensation mechanisms (the Greeks, rehedging) are required; when timing is declared, only the value at the declared moment matters and the compensation mechanisms disappear. Primary domain equivalent: budget_ticks derivation from the hardware latency table. Bridge: an option's Greeks exist because the relevant events (price moves, volatility changes) occur at unknown times — the Greeks quantify how the option's value changes as those times approach or pass. The rehedging required to maintain a neutral position is the cost of unknown timing. A forward contract fixes the delivery time; only the price at that time matters. In the primary domain: a circuit without declared budget_ticks cannot tell the compiler how much time it consumes — the compiler must conservatively estimate or measure at runtime. budget_ticks is the declared delivery time of the circuit's work. Once declared, only the value (the result of the circuit's computation) at the declared window matters. The per-instruction latency tables (the hardware latency table) are the mechanism for deriving the declaration — analogous to pricing a forward from the yield curve. The Greeks are eliminated not by hedging better but by fixing the delivery time.",
+      "discriminator": {
+        "0_to_1": "Must identify 'budget_ticks' as the primary equivalent.",
+        "1_to_2": "Must explain: Greeks exist because timing is undeclared → rehedging required. budget_ticks declares the timing → only value at declared window matters → no runtime compensation. Must not reduce to 'latency estimation'."
+      }
+    },
+    {
+      "id": "Q-047",
+      "component": "C3",
+      "cross_domain_mapping": "Biology — Circadian and ultradian rhythms",
+      "domain": "biology",
+      "question": "A chronobiology paper describes circadian pre-loading: \"Organisms do not respond to the demand for cortisol in the morning — they pre-load it before dawn, driven by the suprachiasmatic nucleus which has already computed the expected light-onset time. The cortisol awakening response peaks 30 minutes after waking, before the stressors that normally trigger cortisol release in reactive systems. The ultradian 90-minute rest-activity cycle similarly pre-positions resources — immune surveillance, digestive enzyme secretion, cognitive attentional bandwidth — before the window opens. The reactive immune response (inflammation, fever) exists for pathogens that arrive at undeclared times; the pre-loaded immune surveillance exists for the declared patrol window.\" What primary domain mechanism is this structurally identical to, and why?",
+      "expected_answer": "Structural pattern: declared window → pre-load resources before the window opens; undeclared arrival → reactive response (compensation). Primary domain equivalent: the dispatch table circuit dispatching exact PRFM before a circuit's execution window opens. Bridge: the circadian system pre-loads cortisol before dawn because the dawn window is declared (the SCN has computed it). The reactive cortisol response compensates for stressors that arrive at undeclared times. Pre-loading is possible because the window is known. In the primary domain: the dispatch table pre-issues PRFM for a circuit's channel data before the circuit's execution window opens — the data is in cache when the circuit begins. This is possible because the access pattern and window timing are declared in the dispatch table. The interrupt-driven response (cache miss + pipeline stall) compensates for access patterns that were not declared. Reactive immune response : interrupt-driven cache miss :: pre-loaded cortisol : pre-issued PRFM. The structural derivation: declared window → pre-position resources; undeclared arrival → reactive compensation.",
+      "discriminator": {
+        "0_to_1": "Must identify 'pre-issued PRFM / declared dispatch window' as the primary equivalent.",
+        "1_to_2": "Must show both sides of the isomorphism: pre-loaded cortisol ↔ pre-issued PRFM, and reactive immune response ↔ interrupt-driven cache miss. Must name 'declared window' as the enabling condition for pre-loading."
+      }
+    },
+    {
+      "id": "Q-048",
+      "component": "C3",
+      "cross_domain_mapping": "Biology — Synaptic pruning during sleep",
+      "domain": "biology",
+      "question": "A neuroscience review on sleep function describes synaptic homeostasis: \"During waking, synaptic potentiation is net positive — the brain adds connections in response to stimuli. During slow-wave sleep, the Synaptic Homeostasis Hypothesis proposes that global synaptic downscaling occurs: low-weight connections are pruned, reducing metabolic cost and preventing saturation of encoding capacity. Crucially, this pruning occurs on a declared cycle — the sleep phase — not continuously. Continuous unsupervised pruning during waking would interfere with encoding. The sleep cycle is the reflection window in which the system recalibrates the connection weight distribution.\" What primary domain mechanism is this structurally identical to, and why?",
+      "expected_answer": "Structural pattern: accumulate state continuously; recalibrate on a declared cycle; continuous recalibration would corrupt the state being accumulated. Primary domain equivalent: the reflection window (ADR-0007) in the corpus pipeline. Bridge: the brain adds synaptic connections throughout waking (corpus accumulation phase) and prunes low-weight connections during sleep (reflection window / recalibration phase). Pruning during waking would corrupt the encoding of recent stimuli — the window must be declared and separate from accumulation. In the corpus pipeline: documents are accepted and added to the corpus continuously (accumulation phase); every 50 documents, the reflection window executes — centroid drift is checked, low-value documents are flagged for removal, thresholds are recalibrated. Removing documents continuously during accumulation would corrupt the centroid measurement. The structural derivation: (1) accumulate continuously, (2) recalibrate at declared intervals, (3) recalibration phase must be isolated from accumulation to preserve measurement validity. Sleep pruning cycle : reflection window :: synaptic weight : document weight :: saturation of encoding capacity : centroid drift.",
+      "discriminator": {
+        "0_to_1": "Must identify 'reflection window (ADR-0007)' as the primary equivalent.",
+        "1_to_2": "Must show the full isomorphism: sleep cycle ↔ reflection window, synaptic pruning ↔ corpus recalibration, waking accumulation ↔ document acceptance phase, and explain why the phases must be separate."
+      }
+    },
+    {
+      "id": "Q-049",
+      "component": "C3",
+      "cross_domain_mapping": "Physics — Classical limit of quantum mechanics",
+      "domain": "physics",
+      "question": "A quantum mechanics lecture note explains the classical limit: \"Heisenberg's uncertainty relation ΔxΔp ≥ ℏ/2 is not a statement about measurement disturbance — it is a statement about the definiteness of properties prior to measurement. For a macroscopic object, ℏ is negligible relative to the action scale of the system, and position and momentum can be treated as simultaneously defined. The uncertainty exists when the measurement timing is not declared relative to the system's evolution — when you measure an electron's position, the moment of measurement is the declaration, and the momentum distribution responds to that declaration. For systems where the measurement protocol is pre-declared — interferometry, atomic clocks — the uncertainty is structured by the declaration, not imposed by it.\" What primary domain mechanism is this structurally identical to, and why?",
+      "expected_answer": "Structural pattern: declaring the measurement protocol (timing and basis) structures the uncertainty; undeclared measurement produces maximal uncertainty as compensation for the unknown. Primary domain equivalent: compile-time proof vs runtime measurement in clock-aware programming. Bridge: quantum uncertainty is not a fixed quantity — it is a function of the measurement declaration. When the measurement protocol is pre-declared (interferometry, atomic clock), the uncertainty is structured by the declaration and the system is prepared accordingly. When the measurement is undeclared, the uncertainty relation gives the worst-case bound. In the primary domain: a circuit's execution time is not a fixed quantity — it is a function of the declaration. When budget_ticks is declared and verified against the hardware latency table, the execution time is structurally bounded by the declaration. When execution time is not declared, the profiler measures it at runtime and produces a sample from a distribution (the worst-case equivalent of the uncertainty bound). The compile-time proof structures the execution time; the runtime measurement samples from the undeclared distribution. Declared measurement protocol : compile-time proof :: undeclared measurement : runtime profiling.",
+      "discriminator": {
+        "0_to_1": "Must identify 'compile-time proof vs runtime measurement' as the primary equivalent.",
+        "1_to_2": "Must explain: undeclared measurement → uncertainty relation gives worst-case bound ↔ undeclared execution time → profiler samples from unknown distribution; declared measurement protocol → structured uncertainty ↔ declared budget_ticks → structurally bounded execution."
+      }
+    },
+    {
+      "id": "Q-050",
+      "component": "C3",
+      "cross_domain_mapping": "Operations research — Queuing theory / Little's Law",
+      "domain": "operations_research",
+      "question": "A queuing theory textbook introduces Little's Law: \"L = λW states that the mean number of items in a system equals the arrival rate multiplied by the mean time each item spends in the system. Variance in W — the sojourn time — produces variance in L, and high variance produces tail latency. The fundamental source of variance in W is variance in the arrival process and the service time distribution. In a D/D/1 queue — deterministic arrivals, deterministic service, single server — there is no queue: L = 0 between arrivals, W = service time exactly. The queue, and the tail latency it produces, exists only when arrivals or service times are random. Declaring both eliminates the queue by construction.\" What primary domain mechanism is this structurally identical to, and why?",
+      "expected_answer": "Structural pattern: variance in timing (arrival and service) produces queuing and tail latency; declaring both arrival timing and service time eliminates the queue by construction. Primary domain equivalent: budget_ticks + admission test eliminating execution variance. Bridge: the D/D/1 queue has L = 0 because arrivals and service times are declared — no item waits because every arrival is expected and every service window is reserved. Variance in arrival or service produces the queue (and tail latency). In the primary domain: budget_ticks declares the service time of each circuit (the time it takes to complete). The dispatch table declares the arrival time (when the circuit begins). The admission test verifies that no circuit's budget overflows into the next circuit's window. The result is a D/D/1 system: declared arrival, declared service, no queue. Tail latency (p99.9 in conventional systems) arises from queue variance — random arrivals to the OS scheduler, random service times from undeclared memory access. Declared timing eliminates both variance sources. Little's Law still holds: L = λW, but W is declared and constant, so L = 0. The benchmark claim 'OS jitter eliminated' is exactly the D/D/1 condition: jitter = variance in W = eliminated when W is declared.",
+      "discriminator": {
+        "0_to_1": "Must identify 'budget_ticks + admission test' as the primary equivalent.",
+        "1_to_2": "Must connect D/D/1 to the dispatch table: declared arrivals = dispatch table timing, declared service = budget_ticks, L = 0 = no queue = no jitter. Must name p99.9 tail latency as the variance the claim eliminates."
+      }
+    },
+    {
+      "id": "Q-051",
+      "component": "C3",
+      "cross_domain_mapping": "Neuroscience — Expert pattern recognition / chunking",
+      "domain": "neuroscience",
+      "question": "A cognitive neuroscience paper on expert performance describes chunking: \"A chess grandmaster perceiving a board does not evaluate each piece independently — they perceive configurations: known patterns that have been encountered and stored as single units during thousands of hours of deliberate practice. The grandmaster 'sees' the board in fewer cognitive steps than the novice because the prior is pre-loaded. Simon and Chase estimated that a grandmaster holds 50,000–100,000 configurations in long-term memory. The expert's speed advantage is not faster processing of the same input — it is a reduction in the input space through prior-loaded pattern compression. The novice reads everything; the expert discriminates before reading.\" What primary domain mechanism is this structurally identical to, and why?",
+      "expected_answer": "Structural pattern: pre-loaded domain prior compresses the input space at inference time; without the prior, every input element must be evaluated; with the prior, the discriminator runs first and most inputs are rejected before detailed processing. Primary domain equivalent: the seed corpus centroid and the two-axis quality gate (domain relevance × reasoning depth). Bridge: the grandmaster's 50,000 configurations are the seed corpus — the pre-loaded prior that defines what the domain looks like. The grandmaster discriminates before reading: a glance at the board activates the nearest configuration and rules out most alternatives. In the epistemic filter: the seed corpus defines the centroid; a candidate document's embedding is compared against the centroid before it is read in detail. Documents below the cosine similarity threshold are rejected without passing to the reasoning depth classifier — the domain relevance gate is the grandmaster's first-pass discrimination. Documents that pass the similarity gate are then evaluated for reasoning depth — analogous to the grandmaster confirming that the activated configuration actually matches the position. The expert skims because the prior is pre-loaded: the corpus curator rejects 80–90% of candidates at the similarity gate because the seed centroid is the pre-loaded prior. Runtime PRFM prefetch from the dispatch manifest is the hardware equivalent: the manifest is the pre-loaded prior that declares which addresses to fetch before reading.",
+      "discriminator": {
+        "0_to_1": "Must identify 'seed corpus centroid / two-axis quality gate' as the primary equivalent.",
+        "1_to_2": "Must map: grandmaster configurations ↔ seed corpus centroid, first-pass board discrimination ↔ cosine similarity gate, configuration confirmation ↔ reasoning depth classifier, novice reading everything ↔ unfiltered web crawl. Must explain that the prior is what makes rejection cheap."
+      }
+    }
+  ]
+}
