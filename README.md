@@ -118,3 +118,4 @@ Anyone with a coherent authored seed corpus in their domain can reproduce the me
 | [0005](docs/adr/0005-embedding-model.md) | Embedding model — nomic-embed-text via Ollama | Accepted |
 | [0006](docs/adr/0006-candidate-discovery-and-feedback.md) | Candidate discovery and relevance feedback | Accepted |
 | [0007](docs/adr/0007-reflection-window.md) | Mandatory reflection window (every 50 documents) | Accepted |
+| [0008](docs/adr/0008-contradiction-detection.md) | Contradiction detection and known-wrong claims register | Accepted |
