@@ -13,6 +13,27 @@
 
 ---
 
+## The Prerequisite Nobody States
+
+**This pipeline is a force multiplier on the curator's knowledge. It is not a substitute for it.**
+
+The filter accepts documents that look like your seed and reason like your seed. If your seed embodies a framing trap — a locally correct belief that prevents you from questioning the assumption beneath it — the pipeline will scale that trap into a training corpus and the model will defend it fluently.
+
+The W-register (the known-wrong claims register) is only as complete as your self-awareness. If you have not escaped a framing trap in your domain, it will not appear in your W-register. It will appear in your training data as accepted signal. The model will learn it.
+
+There is no automated fix for this. The quality of the output is bounded by the quality of your prior, not by the quality of the pipeline. The pipeline's job is to faithfully reproduce what you know at scale — which means it faithfully reproduces what you don't know at scale too.
+
+**What this means in practice:**
+
+- Do not run this pipeline on a seed you haven't read critically
+- Do not define a W-register from a list of common mistakes — define it from claims you personally held and later recognised as wrong
+- Do not graduate a model until a benchmark question set written before training exposes the blind spots you were aware of at construction time
+- Expect iteration: the first training run will reveal corpus gaps you did not know existed
+
+This is a tool for someone who knows their domain well enough to recognise first-principles reasoning when they encounter it. If you are still inside the dominant paradigm of your field, this pipeline will produce a model that is fluent in that paradigm. That may be useful. It is not the same thing as a model that can question it.
+
+---
+
 ## The Problem
 
 Training a domain-specific LLM requires a high-quality corpus. Finding one is the hard part. Web crawls are noisy. Academic databases are large but undifferentiated — a survey paper and a first-principles derivation paper look similar to a keyword filter, but only one of them trains a model that can reason rather than pattern-match.
@@ -126,3 +147,5 @@ Anyone with a coherent authored seed corpus in their domain can reproduce the me
 | [0013](docs/adr/0013-evaluation-benchmark.md) | Evaluation benchmark (51 questions, 3 components, graduation criteria) | Accepted |
 | [0014](docs/adr/0014-corpus-reproducibility.md) | Corpus reproducibility (document records, centroid snapshots, verify script) | Accepted |
 | [0015](docs/adr/0015-domain-hierarchy.md) | Domain hierarchy definition (root → branch → leaf, centroid inheritance) | Accepted |
+| [0016](docs/adr/0016-seed-construction-methodology.md) | Seed construction methodology — how to define your positive class | Accepted |
+| [0017](docs/adr/0017-benchmark-construction-methodology.md) | Benchmark construction methodology — how to write your evaluation questions | Accepted |
