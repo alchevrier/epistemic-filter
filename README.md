@@ -120,3 +120,4 @@ Anyone with a coherent authored seed corpus in their domain can reproduce the me
 | [0007](docs/adr/0007-reflection-window.md) | Mandatory reflection window (every 50 documents) | Accepted |
 | [0008](docs/adr/0008-contradiction-detection.md) | Contradiction detection and known-wrong claims register | Accepted |
 | [0009](docs/adr/0009-source-context-classification.md) | Source context classification (academic, industry, independent, hardware) | Accepted |
+| [0010](docs/adr/0010-cross-domain-reinforcement.md) | Cross-domain reinforcement layer | Accepted |
