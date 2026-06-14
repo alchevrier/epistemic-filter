@@ -1,0 +1,121 @@
+[
+  {
+    "id": "W-01",
+    "degree": "scoped",
+    "claim": "Locks are unavoidable for shared mutable state in concurrent systems",
+    "refutation": "Lock-freedom follows from declaring execution windows at compile time. When no two circuits share a write window for the same memory region, the region is not shared mutable state — it is a channel with a single declared writer. Locks compensate for undeclared timing; declared timing makes them structurally redundant. True under POSIX threads and shared address space; false when timing is declared.",
+    "seed_sources": ["docs/papers/01-clock-aware-programming.md", "docs/papers/03-os-and-runtime/06-services-security.md"]
+  },
+  {
+    "id": "W-02",
+    "degree": "scoped",
+    "claim": "Memory barriers / fences are necessary hardware primitives for correct multi-core programs",
+    "refutation": "Memory ordering constraints are redundant when the compiler proves no two circuits access the same memory region in overlapping windows. The barrier compensates for the compiler not knowing the schedule; the schedule eliminates the need for the barrier. Correct within the assumption of undeclared timing.",
+    "seed_sources": ["docs/papers/03-os-and-runtime/04-memory.md", "docs/adr/0007-memory-ordering-elimination.md"]
+  },
+  {
+    "id": "W-03",
+    "degree": "scoped",
+    "claim": "An OS scheduler is necessary for general-purpose computing",
+    "refutation": "The scheduler exists to compensate for undeclared execution windows. When every circuit declares its window and the admission test passes, the dispatch table is a compile-time theorem. A runtime scheduler is redundant. 'General-purpose' is not a property of the scheduler; it is a property of the set of circuits that can be declared.",
+    "seed_sources": ["docs/papers/03-os-and-runtime/02-the-os.md", "docs/papers/03-os-and-runtime/03-execution.md"]
+  },
+  {
+    "id": "W-04",
+    "degree": "misattributed",
+    "claim": "Real-time systems require dedicated RTOS or special hardware",
+    "refutation": "The observation (real-time requires determinism) is correct. The explanation (determinism requires RTOS) is wrong. Determinism requires declared windows, which the RTOS approximates badly at runtime and the compiler proves exactly at compile time. The RTOS is a runtime compensation for a missing compile-time proof.",
+    "seed_sources": ["docs/papers/01-clock-aware-programming.md", "docs/papers/03-os-and-runtime/03-execution.md"]
+  },
+  {
+    "id": "W-05",
+    "degree": "scoped",
+    "claim": "Cache misses are irreducible runtime variance",
+    "refutation": "Irreducible only when access patterns are undeclared. When channel tiers are declared and the dispatch table is known before execution, the runtime issues precise prefetch instructions (PRFM) for exactly the addresses each circuit will access. The miss becomes a prefetch hit scheduled at a declared window boundary.",
+    "seed_sources": ["docs/papers/03-os-and-runtime/04-memory.md", "README.md"]
+  },
+  {
+    "id": "W-06",
+    "degree": "scoped",
+    "claim": "Garbage collection is necessary for memory safety without unsafe code",
+    "refutation": "Memory safety without GC follows from declared channel lifetimes. Each channel has a declared tier (ephemeral, task, session, permanent). The compiler proves no circuit reads a channel after its declared lifetime. No runtime collector is needed because there is no undeclared allocation to collect.",
+    "seed_sources": ["docs/papers/02-language.md", "docs/papers/03-os-and-runtime/04-memory.md"]
+  },
+  {
+    "id": "W-07",
+    "degree": "scoped",
+    "claim": "Pointer indirection is necessary for dynamic data structures",
+    "refutation": "Pointer indirection exists to compensate for not knowing the size and location of data at compile time. When channel size and tier are declared, the compiler resolves the physical address at compile time. Dynamic data structures are channels with declared access patterns (W[i] = i for arrays; hash(key) & mask for maps). No indirection required.",
+    "seed_sources": ["docs/papers/02-language.md"]
+  },
+  {
+    "id": "W-08",
+    "degree": "near-miss",
+    "claim": "Exokernels solve the OS abstraction problem by pushing resource management to applications",
+    "refutation": "The exokernel diagnoses the right problem (OS abstractions impose unnecessary overhead) but stops at the wrong solution (relocate resource management to the application). Relocation preserves the total complexity — the application still needs a scheduler, a memory manager, a page table. The clock-aware model eliminates runtime resource management entirely by making it a compile-time proof. The exokernel is the closest prior art; the divergence point is 'relocate' vs 'eliminate'.",
+    "seed_sources": ["docs/papers/03-os-and-runtime/02-the-os.md", "docs/adr/0002-cpu-partition-model.md"]
+  },
+  {
+    "id": "W-09",
+    "degree": "scoped",
+    "claim": "std::atomic / the C++ memory model is the correct abstraction for concurrent hardware access",
+    "refutation": "Correct within the assumption that timing is undeclared. std::atomic compensates for the compiler not knowing which threads access which memory and when. When execution windows are declared at compile time and the channel model enforces single-writer ownership, atomic operations are structurally redundant. C++ accretes compensating mechanisms because the committee process can add but never remove foundational assumptions.",
+    "seed_sources": ["docs/papers/01-clock-aware-programming.md", "docs/papers/03-os-and-runtime/04-memory.md"]
+  },
+  {
+    "id": "W-10",
+    "degree": "misattributed",
+    "claim": "Managed runtimes (JVM, GC) are a necessary productivity trade-off for safe concurrent programming",
+    "refutation": "The observation (programmer productivity matters) is correct. The explanation (JVM/GC is the necessary cost) is wrong. JVM and GC compensate for undeclared memory lifetimes and undeclared execution windows. LMAX Disruptor is the empirical proof: engineers spent enormous effort un-doing what the JVM does by default to recover the latency properties that declared timing gives for free. AI authorship removes the productivity argument entirely.",
+    "seed_sources": ["docs/papers/02-language.md", "docs/papers/03-os-and-runtime/04-memory.md"]
+  },
+  {
+    "id": "W-11",
+    "degree": "framing-trap",
+    "claim": "RCU (read-copy-update) is the correct solution to the concurrent read performance problem",
+    "refutation": "RCU is not a solution — it is a compensation for undeclared read access patterns. When which circuit reads which memory region and when is declared at compile time, the read is a single-writer channel subscription. No reader contention exists by construction. No grace period required. No generation counter. RCU trains engineers to master the compensation rather than question the assumption that made it necessary.",
+    "seed_sources": ["docs/papers/01-clock-aware-programming.md", "docs/adr/0003-rcu-elimination-via-compile-time-proofs.md"]
+  },
+  {
+    "id": "W-12",
+    "degree": "framing-trap",
+    "claim": "Dynamic memory allocation is necessary because application memory requirements cannot be known in advance",
+    "refutation": "Every production low-latency system contradicts this in its own codebase: object pools, arena allocators, slab allocators, pre-allocated ring buffers — all are runtime reimplementations of channel declarations. The engineer who writes an object pool implicitly declares that bounds are known. malloc exists to compensate for the absence of that declaration. GC pause, fragmentation, and allocator contention are not memory properties — they are properties of undeclared memory layout.",
+    "seed_sources": ["docs/papers/02-language.md", "docs/papers/03-os-and-runtime/04-memory.md"]
+  },
+  {
+    "id": "W-13",
+    "degree": "framing-trap",
+    "claim": "The JVM is efficient at memory allocation — bump pointer allocation is O(1)",
+    "refutation": "The allocation cost is O(1) but the claim is an IOU. The GC must trace the entire live heap, compact/sweep fragmented regions, update moved pointers, maintain write barriers and card tables — O(live heap) in time, O(heap) in bandwidth, unpredictable in timing. Total cost per object = allocation + GC + write barrier + card table. Bump pointer is an efficient way of making the cost invisible until it is too late to avoid it.",
+    "seed_sources": ["docs/papers/03-os-and-runtime/04-memory.md"]
+  },
+  {
+    "id": "W-14",
+    "degree": "false",
+    "claim": "C++ is close to the hardware",
+    "refutation": "False on two counts. First: the hardware is not imperative — OOO processor has no sequential ordering concept; C++ sequential narrative requires the entire compiler backend + OOO engine + branch predictor to translate. Second: self-refuting in practice — aliasing rules, restrict, __builtin_expect, packed, volatile, std::launder, atomic memory ordering, intrinsics — if you need all of this for predictable codegen, the abstraction is failing. Channel declarations are closer to hardware: declared tier + declared access pattern = physical address at known latency.",
+    "seed_sources": ["docs/papers/02-language.md", "docs/papers/04-hardware-architecture.md"]
+  },
+  {
+    "id": "W-15",
+    "degree": "misattributed",
+    "claim": "Language X is the right tool for domain Y because it is inherently suited to it",
+    "refutation": "The causation runs in reverse. Python dominates ML because the first frameworks were written in Python (NumPy is C). Java dominates enterprise because of Sun's 1990s marketing and university adoption. C++ dominates HFT because legacy C engineers built the first systems. In every case: institutional arrival + talent pool + library ecosystem → domain dominance. Technical fitness is post-hoc rationalisation of a social reality.",
+    "seed_sources": ["docs/papers/02-language.md"]
+  },
+  {
+    "id": "W-16",
+    "degree": "misattributed",
+    "claim": "Domain expertise and role specialisation produce the innovations that change a field",
+    "refutation": "Paradigm shifts come from people who don't fit the existing role. Thompson/Ritchie built an OS and needed a language. Torvalds was a student who found Minix unsatisfying. McCarthy invented Lisp as a notation side effect. Knuth built TeX as a mathematician. Institutional hiring selects for fit with the current paradigm — systematically excluding those most likely to replace it. No job posting for clock-aware systems engineer: evidence the idea is genuinely outside existing framing.",
+    "seed_sources": ["docs/adr/0009-source-context-classification.md"]
+  },
+  {
+    "id": "W-17",
+    "degree": "misattributed",
+    "claim": "Deep domain specialisation produces the broadest and most general insights",
+    "refutation": "Deep specialisation produces local optimisation within a frame, not challenge to the frame. The Linux kernel expert has mastery of scheduling/locking/memory — all within the undeclared-timing assumption. The assumption is invisible; it is their professional identity. Intel's cross-domain workload analysis synthesises at the feature level (wider SIMD, larger cache) inside the wrong frame (OOO + undeclared timing). The general insight 'declare timing, eliminate compensation' is only visible from outside any single domain's frame.",
+    "seed_sources": ["docs/adr/0010-cross-domain-reinforcement.md"]
+  }
+]

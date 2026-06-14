@@ -121,3 +121,8 @@ Anyone with a coherent authored seed corpus in their domain can reproduce the me
 | [0008](docs/adr/0008-contradiction-detection.md) | Contradiction detection and known-wrong claims register | Accepted |
 | [0009](docs/adr/0009-source-context-classification.md) | Source context classification (academic, industry, independent, hardware) | Accepted |
 | [0010](docs/adr/0010-cross-domain-reinforcement.md) | Cross-domain reinforcement layer | Accepted |
+| [0011](docs/adr/0011-reasoning-depth-classifier-features.md) | Reasoning depth classifier — structural features | Accepted |
+| [0012](docs/adr/0012-fine-tuning-strategy.md) | Fine-tuning strategy (Phi-3 Mini, QLoRA, contrastive training) | Accepted |
+| [0013](docs/adr/0013-evaluation-benchmark.md) | Evaluation benchmark (51 questions, 3 components, graduation criteria) | Accepted |
+| [0014](docs/adr/0014-corpus-reproducibility.md) | Corpus reproducibility (document records, centroid snapshots, verify script) | Accepted |
+| [0015](docs/adr/0015-domain-hierarchy.md) | Domain hierarchy definition (root → branch → leaf, centroid inheritance) | Accepted |
