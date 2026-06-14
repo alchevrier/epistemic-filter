@@ -18,6 +18,10 @@ Every candidate document must pass **two independent axes**, both required:
 1. **Domain relevance** — cosine similarity of the document's embedding against the seed corpus centroid. Threshold: ≥ 0.85.
 2. **Reasoning depth** — structural classifier score measuring whether the document derives conclusions from stated premises (first-principles reasoning) rather than asserting them. Threshold: ≥ 0.80.
 
+**Reasoning depth is not mathematical density.** A document dense with proofs and formalism scores high on mathematical rigour, not necessarily on reasoning depth. The distinction is whether the **premises are made explicit and examinable**. A document that states its assumptions, shows why each step follows from the previous one, and makes the frame of the argument visible — even in plain prose — scores high on reasoning depth. A document that works out the maths of a mechanism while leaving the assumption that makes the mechanism necessary unstated scores low, because the reader cannot evaluate the frame, only the derivation within it.
+
+An expert does not need the full maths of RCU to evaluate it. They need two things: what problem it claims to solve, and why that problem exists. Those two facts allow the expert to evaluate whether the problem is real or whether it is a compensation for a missing model. The maths are irrelevant to that judgment — they are only relevant if the frame has already been accepted. Reasoning depth measures whether the document exposes the frame, not whether it executes within it rigorously.
+
 A document that passes one axis but fails the other is rejected. There is no weighted average, no partial admission, no override.
 
 ---
