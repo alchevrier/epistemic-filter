@@ -9,7 +9,7 @@
 
 The corpus pipeline (ADR-0001 through ADR-0010) produces a curated text corpus. This ADR defines how that corpus is used to produce a fine-tuned local LLM — which base model, which training method, how the primary and cross-domain tiers are mixed, and how contrastive training on annotated contradictions is implemented.
 
-The constraints are: i5-12400 CPU, 32 GB RAM, no GPU, 70 GB free NVMe. Fine-tuning must be feasible within these constraints without cloud compute.
+The hardware is: i5-12400 CPU, 32 GB RAM, RTX 4060 (8GB VRAM, CUDA 13.0), 70 GB free NVMe. Fine-tuning must be feasible locally without cloud compute.
 
 ---
 
@@ -35,10 +35,11 @@ Alternative considered: Gemma 3 1B (faster, smaller) — rejected because 1B par
 - LoRA adapters trained in fp16/bf16
 - Rank: r=16, alpha=32 (standard starting point, tune during calibration)
 - Target modules: `q_proj`, `v_proj`, `k_proj`, `o_proj` (attention layers)
-- Memory footprint during training: ~8–12 GB RAM (base model + gradients + optimizer state for adapter weights only)
-- Tooling: `unsloth` (CPU-compatible QLoRA, 2× faster than naive implementation)
+- Tooling: `unsloth` with CUDA support (RTX 4060, 8GB VRAM, CUDA 13.0)
 
-Full fine-tuning rejected: requires 4× model size in optimizer state — 8.8 GB for Phi-3 Mini at fp32. Exceeds safe RAM budget when combined with corpus and tooling overhead.
+**Hardware:** RTX 4060 (8188MB VRAM, CUDA 13.0). Phi-3 Mini Q4 (~2.2GB) leaves ~5GB for gradients and optimizer state — comfortable within VRAM budget. GPU training is ~10–15× faster than CPU.
+
+Full fine-tuning rejected: requires 4× model size in optimizer state — pushes against VRAM limit. QLoRA trains only the low-rank adapters (~1% of parameters), preserving the base model's generalisation while fitting comfortably in 8GB.
 
 ### Training Data Mix
 
@@ -74,15 +75,15 @@ The model is trained to produce the REFUTATION and BRIDGE given the CONTEXT, CLA
 - **Evaluation**: run benchmark (ADR-0013) after epoch 3 and epoch 6. Stop if benchmark plateaus or degrades.
 - **Checkpoint**: save adapter weights after each epoch. Total checkpoint storage: ~3 × (r=16 adapter size) ≈ 150 MB.
 
-### Estimated Training Time (CPU, i5-12400)
+### Estimated Training Time (RTX 4060)
 
 - Corpus size target: 500 documents × ~4K tokens average = ~2M tokens
-- Phi-3 Mini at Q4 on CPU: ~100–150 tokens/second
+- Phi-3 Mini at Q4 on GPU: ~1,500–2,000 tokens/second (bf16 adapter training)
 - Tokens per epoch: 2M
-- Time per epoch: ~4–6 hours
-- 6 epochs: ~24–36 hours total
+- Time per epoch: ~20–30 minutes
+- 6 epochs: **2–4 hours total**
 
-Acceptable. Run overnight across 3 nights. No cloud compute required.
+No cloud compute required. Full calibration cycle (corpus validation + benchmark) within a single afternoon.
 
 ---
 
@@ -114,7 +115,7 @@ A model that learns only the correct claims is fragile in deployment. Users will
 
 ### LoRA without quantisation
 
-**Rejected.** Phi-3 Mini in fp16 requires ~7.6 GB RAM. With LoRA adapter gradients and optimizer state, total RAM during training reaches ~18–20 GB. Leaves insufficient headroom on 32 GB for OS and tooling. Q4 quantisation brings the base model to ~2.2 GB, making training comfortable within the RAM budget.
+**Rejected.** Phi-3 Mini in fp16 requires ~7.6 GB VRAM. With LoRA adapter gradients and optimizer state, total VRAM during training reaches ~11–13 GB — exceeds the RTX 4060's 8 GB budget. Q4 quantisation brings the base model to ~2.2 GB, keeping total training footprint within 6–7 GB VRAM.
 
 ### Instruction tuning format (prompt-response pairs)
 
@@ -127,5 +128,5 @@ A model that learns only the correct claims is fragile in deployment. Users will
 - `unsloth` must be installed and tested for CPU compatibility before training begins
 - Adapter checkpoints (~50 MB each) stored alongside corpus; total storage impact negligible
 - The contrastive training format requires the W-register to be machine-readable (standalone JSON — ADR not yet written, dependency)
-- Training time is 24–36 hours spread across multiple sessions; requires a resumable checkpoint strategy
-- The M5 Max (when available) reduces training time by ~10–20× via GPU acceleration; the same QLoRA approach applies without modification
+- Training time is 2–4 hours per full cycle; checkpoint strategy still advisable in case of interruption
+- If corpus grows beyond 5,000 documents, re-evaluate whether 8GB VRAM remains sufficient at r=16
