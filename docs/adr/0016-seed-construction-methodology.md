@@ -172,7 +172,17 @@ The framing traps most likely to appear in accepted corpus documents are the one
 
 ## Variant B — Founding-Claim-First (Non-Expert Path)
 
-The methodology above (Variant A) assumes the curator is already an expert — they have escaped at least one framing trap in their domain and can construct a seed from that position. Most practitioners are not yet experts. They are inside the dominant paradigm, accumulating beliefs within it.
+### What a Core Belief Actually Is
+
+A core belief is not wrong from the start. It is **load-bearing** — it sustains your entire mental model, your tooling choices, your professional practice. It works. It is what you build on. The word "limiting" is only visible in retrospect, after the crisis.
+
+The belief that "execution timing is undeclared" sustained decades of OS design, compiler development, and concurrency research. It was not a mistake — it was the correct founding assumption for the hardware and problems of its era. It became limiting only when the compensation load it required — scheduler, mutex, barrier, GC, RCU, thread pool, context switch, interrupt handler — grew large enough to be visible as a pattern rather than as isolated engineering decisions.
+
+This is the critical distinction: a core belief sustains you until it doesn't. The transition is not a correction of an error. It is a structural failure under increasing load — the belief can no longer carry what has been built on top of it without requiring more compensation than the original problem justified.
+
+**Implications for the W-register:** the degree classification (scoped / near-miss / misattributed / framing-trap / false) maps to where the belief is in its lifecycle. A scoped belief is still sustaining within its boundary — it has not failed, it has only been bounded. A framing-trap is sustaining while preventing you from seeing the load it is accumulating. A false belief never had a valid sustaining phase. The W-register is not a list of mistakes — it is a record of beliefs at different stages of structural failure.
+
+**Implications for the crisis:** the crisis is not an intellectual event. It is the moment the sustaining function fails. You cannot force it. You can only count the load and wait for the structure to become visible as load rather than as normal engineering.
 
 Variant B is for that case. It does not require an expert seed as input. It uses a **founding question** as the minimal starting condition and treats the seed as an emergent output of the iteration, not a prerequisite to it.
 
