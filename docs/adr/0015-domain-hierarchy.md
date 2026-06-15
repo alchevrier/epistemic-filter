@@ -120,17 +120,35 @@ There is no external dispatcher and no per-domain model file to load. The routin
 
 ## Rationale
 
+**Knowledge is hierarchical: fundamentals generate derived rules, derived rules generate examples.**
+
+Every domain of knowledge has the same structure:
+
+```
+Fundamental  — universal principle, applies to all cases in the domain
+    ↓ derives
+Derived rules — applies to subsets, inherits from the fundamental
+    ↓ derives
+Examples     — applies to one case, inherits from derived rules
+```
+
+One fundamental understood deeply generates all its derived rules. One derived rule generates all its examples. A model that has internalised the fundamental can derive examples on demand — it does not need to have memorised them. A model trained only on examples pattern-matches; it cannot derive. A model trained on the derivation chain from fundamental to example can generalise to cases it has never seen.
+
+This is why the three-level hierarchy exists: root = fundamental, branch = derived rule, leaf = example class. The levels are not an organisational convenience — they are the structure of knowledge itself.
+
+**The compression is real but conditional.** One fundamental compresses the derived rules because derived rules can be derived from it. Derived rules compress examples for the same reason. But the compression only works if the hierarchy is genuine — if each level actually derives from the one above it. A false hierarchy (grouping by surface similarity rather than by derivation) compresses nothing. It just renames. The test: can you derive the leaf from the root, step by step, without circular reference? If not, the hierarchy is false at that level and the grouping belongs at the same level as its apparent parent.
+
 **Why three levels (root → branch → leaf)?**
 
 Root captures the founding insight. Branch captures hardware vs software split — these are genuinely different vocabularies and reasoning styles. Leaf captures specific sub-domain expertise. Four levels would over-specify at current corpus size; two levels would under-differentiate the branches.
 
 **Why inherit parent seed into child seed?**
 
-Without inheritance, a leaf model trained only on FPGA papers would lose the connection to the root insight. It would become a domain expert that knows FPGA deeply but cannot relate FPGA timing constraints to the clock-aware programming model. Inheritance keeps the connection alive.
+Without inheritance, a leaf model trained only on FPGA papers would lose the connection to the root insight. It would become a domain expert that knows FPGA deeply but cannot relate FPGA timing constraints to the clock-aware programming model. Inheritance keeps the connection alive — the leaf must be derivable from the root, and the seed inheritance is the training-time enforcement of that derivability.
 
 **Why a single aggregate model rather than separate models per node?**
 
-Separate models per node requires loading a different model file per query — incompatible with the goal of multiple agents simultaneously resident in memory. A single model with all domain priors baked in is always loaded, always available, and routes by context signal rather than by model swap. The contradiction between domains (e.g., RCU literature vs clock-aware literature) is resolved during training via contrastive pairs — producing a model that holds both and can reason about the difference — not by isolating them into separate models that never interact.
+Separate models per node requires loading a different model file per query — incompatible with the goal of multiple domains simultaneously resident in memory. A single model with all domain priors baked in is always loaded, always available, and routes by context signal rather than by model swap. The contradiction between domains (e.g., RCU literature vs clock-aware literature) is resolved during training via contrastive pairs — producing a model that holds both and can reason about the difference — not by isolating them into separate models that never interact.
 
 **Why routing by centroid similarity at inference time?**
 
