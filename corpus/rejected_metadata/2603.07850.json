@@ -1,0 +1,29 @@
+{
+  "arxiv_id": "2603.07850",
+  "scored_at": "2026-06-15T14:49:32.249591+00:00",
+  "decision": "REJECT",
+  "reason": "fails domain relevance",
+  "text_source": "full_text_html",
+  "axis1_domain_relevance": 0.737,
+  "axis1_pass": false,
+  "axis2_reasoning_depth": 0.2994,
+  "axis2_pass": true,
+  "reasoning_depth_features": {
+    "premise_declaration": 0.0,
+    "derivation_chain": 0.498,
+    "frame_exposure": 0.0,
+    "assumption_challenge": 0.0,
+    "conclusion_specificity": 1.0,
+    "frame_trap_absence": 1.0
+  },
+  "metadata": {
+    "arxiv_id": "2603.07850",
+    "title": "A Lock-Free, Fully GPU-Resident Architecture for the Verification of Goldbach's Conjecture",
+    "abstract": "We present a fully device-resident, multi-GPU architecture for the large-scale computational verification of Goldbach's conjecture. In prior work, a segmented double-sieve eliminated monolithic VRAM bottlenecks but remained constrained by host-side sieve construction and PCIe transfer latency. In this work, we migrate the entire segment generation pipeline to the GPU using highly optimised L1 shared-memory tiling, achieving near-zero host-device communication during the critical verification path. To fully leverage heterogeneous multi-GPU clusters, we introduce an asynchronous, lock-free work-stealing pool that replaces static workload partitioning with atomic segment claiming, enabling $99.7$% parallel efficiency at 2 GPUs and $98.6$% at $4$ GPUs. We further implement strict mathematical overflow guards guaranteeing the soundness of the 64-bit verification pipeline up to its theoretical ceiling of $1.84 \\times 10^{19}$. On the same hardware, the new architecture achieves a $45.6\\times$ algorithmic speedup over its host-coupled predecessor at N = $10^{10}$. End-to-end, the framework verifies Goldbach's conjecture up to $10^{12}$ in $36.5$ seconds on a single NVIDIA RTX 5090, and up to $10^{13}$ in $133.5$ seconds on a four-GPU system. All code is open-source and reproducible on commodity hardware.",
+    "authors": [
+      "Isaac Llorente-Saguer"
+    ],
+    "published": "2026-03-08",
+    "arxiv_url": "https://arxiv.org/abs/2603.07850"
+  }
+}

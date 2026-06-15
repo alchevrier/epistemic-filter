@@ -65,10 +65,25 @@ SEARCH_QUERIES = [
         "(cat:cs.OS OR cat:cs.PL OR cat:cs.AR)",
         '"compile-time" AND ("execution budget" OR "timing guarantee" OR "dispatch table")',
     ),
+    # Execution window / temporal partitioning (ADR-0002 vocabulary)
+    (
+        "(cat:cs.OS OR cat:cs.PL OR cat:cs.AR)",
+        '"execution window" OR ("temporal partition" AND "real-time") OR ("time partition" AND "deterministic")',
+    ),
+    # Unikernel / library OS without preemption
+    (
+        "(cat:cs.OS)",
+        '("unikernel" OR "library OS" OR "exokernel") AND ("deterministic" OR "formal" OR "static")',
+    ),
     # Static scheduling formal
     (
         "(cat:cs.OS OR cat:cs.AR)",
         '"static scheduling" AND ("formal" OR "proof" OR "verified" OR "wcet")',
+    ),
+    # Partitioned global address space / static memory layout
+    (
+        "(cat:cs.PL OR cat:cs.AR OR cat:cs.DC)",
+        '("static memory" OR "compile-time allocation" OR "region-based memory") AND ("deterministic" OR "formal" OR "real-time")',
     ),
     # Lock-freedom with formal reasoning
     (

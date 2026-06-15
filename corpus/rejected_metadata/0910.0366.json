@@ -1,0 +1,30 @@
+{
+  "arxiv_id": "0910.0366",
+  "scored_at": "2026-06-15T14:49:41.741078+00:00",
+  "decision": "REJECT",
+  "reason": "fails both axes",
+  "text_source": "abstract_only",
+  "axis1_domain_relevance": 0.6443,
+  "axis1_pass": false,
+  "axis2_reasoning_depth": 0.05,
+  "axis2_pass": false,
+  "reasoning_depth_features": {
+    "premise_declaration": 0.0,
+    "derivation_chain": 0.0,
+    "frame_exposure": 0.0,
+    "assumption_challenge": 0.0,
+    "conclusion_specificity": 0.0,
+    "frame_trap_absence": 1.0
+  },
+  "metadata": {
+    "arxiv_id": "0910.0366",
+    "title": "Supporting Lock-Free Composition of Concurrent Data Objects",
+    "abstract": "Lock-free data objects offer several advantages over their blocking counterparts, such as being immune to deadlocks and convoying and, more importantly, being highly concurrent. But they share a common disadvantage in that the operations they provide are difficult to compose into larger atomic operations while still guaranteeing lock-freedom. We present a lock-free methodology for composing highly concurrent linearizable objects together by unifying their linearization points. This makes it possible to relatively easily introduce atomic lock-free move operations to a wide range of concurrent objects. Experimental evaluation has shown that the operations originally supported by the data objects keep their performance behavior under our methodology.",
+    "authors": [
+      "Daniel Cederman",
+      "Philippas Tsigas"
+    ],
+    "published": "2009-10-02",
+    "arxiv_url": "https://arxiv.org/abs/0910.0366"
+  }
+}

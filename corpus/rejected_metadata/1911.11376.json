@@ -1,0 +1,29 @@
+{
+  "arxiv_id": "1911.11376",
+  "scored_at": "2026-06-15T14:49:26.223975+00:00",
+  "decision": "REJECT",
+  "reason": "fails domain relevance",
+  "text_source": "abstract_only",
+  "axis1_domain_relevance": 0.6825,
+  "axis1_pass": false,
+  "axis2_reasoning_depth": 0.35,
+  "axis2_pass": true,
+  "reasoning_depth_features": {
+    "premise_declaration": 0.0,
+    "derivation_chain": 1.0,
+    "frame_exposure": 0.0,
+    "assumption_challenge": 0.0,
+    "conclusion_specificity": 0.0,
+    "frame_trap_absence": 1.0
+  },
+  "metadata": {
+    "arxiv_id": "1911.11376",
+    "title": "Mandala: A Smart Contract Programming Language",
+    "abstract": "Smart contracts on a blockchain behave precisely as specified by their code. A vulnerability in this code can lead to unexpected behaviour, which is hard to fix because a blockchain does not allow to change smart contract code after its deployment. Such vulnerabilities have led to several incidents. In the aftermath of such an event, a hard-fork between Ethereum and Ethereum classic was the result. This thesis proposes to develop a new smart contract programming language with the primary focus on safety, auditability, and the intention to prevent as many of the known categories of vulnerabilities by design as possible. The programming language's code is validated during deployment and afterwards isolated from other smart contracts running on the same blockchain to enforce compile-time guarantees during runtime. The designed programming language does evaluate new concepts and paradigms rarely used in non-smart contract environments for their potential benefit in a smart contract environment.",
+    "authors": [
+      "Markus Knecht"
+    ],
+    "published": "2019-11-26",
+    "arxiv_url": "https://arxiv.org/abs/1911.11376"
+  }
+}

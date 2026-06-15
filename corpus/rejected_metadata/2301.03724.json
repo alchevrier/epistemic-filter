@@ -1,0 +1,31 @@
+{
+  "arxiv_id": "2301.03724",
+  "scored_at": "2026-06-15T14:31:29.772963+00:00",
+  "decision": "REJECT",
+  "reason": "fails both axes",
+  "text_source": "abstract_only",
+  "axis1_domain_relevance": 0.7346,
+  "axis1_pass": false,
+  "axis2_reasoning_depth": 0.1514,
+  "axis2_pass": false,
+  "reasoning_depth_features": {
+    "premise_declaration": 0.0,
+    "derivation_chain": 0.338,
+    "frame_exposure": 0.0,
+    "assumption_challenge": 0.0,
+    "conclusion_specificity": 0.0,
+    "frame_trap_absence": 1.0
+  },
+  "metadata": {
+    "arxiv_id": "2301.03724",
+    "title": "SoK: Hardware Defenses Against Speculative Execution Attacks",
+    "abstract": "Speculative execution attacks leverage the speculative and out-of-order execution features in modern computer processors to access secret data or execute code that should not be executed. Secret information can then be leaked through a covert channel. While software patches can be installed for mitigation on existing hardware, these solutions can incur big performance overhead. Hardware mitigation is being studied extensively by the computer architecture community. It has the benefit of preserving software compatibility and the potential for much smaller performance overhead than software solutions.   This paper presents a systematization of the hardware defenses against speculative execution attacks that have been proposed. We show that speculative execution attacks consist of 6 critical attack steps. We propose defense strategies, each of which prevents a critical attack step from happening, thus preventing the attack from succeeding. We then summarize 20 hardware defenses and overhead-reducing features that have been proposed. We show that each defense proposed can be classified under one of our defense strategies, which also explains why it can thwart the attack from succeeding. We discuss the scope of the defenses, their performance overhead, and the security-performance trade-offs that can be made.",
+    "authors": [
+      "Guangyuan Hu",
+      "Zecheng He",
+      "Ruby Lee"
+    ],
+    "published": "2023-01-09",
+    "arxiv_url": "https://arxiv.org/abs/2301.03724"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "arxiv_id": "2604.26727",
+  "scored_at": "2026-06-15T14:49:27.424790+00:00",
+  "decision": "REJECT",
+  "reason": "fails both axes",
+  "text_source": "abstract_only",
+  "axis1_domain_relevance": 0.7032,
+  "axis1_pass": false,
+  "axis2_reasoning_depth": 0.15,
+  "axis2_pass": false,
+  "reasoning_depth_features": {
+    "premise_declaration": 0.0,
+    "derivation_chain": 0.0,
+    "frame_exposure": 0.0,
+    "assumption_challenge": 0.0,
+    "conclusion_specificity": 1.0,
+    "frame_trap_absence": 1.0
+  },
+  "metadata": {
+    "arxiv_id": "2604.26727",
+    "title": "Comparing Smart Contract Paradigms: A Preliminary Study of Security and Developer Experience",
+    "abstract": "Smart contract vulnerabilities have caused billions in financial losses, raising questions about whether programming language paradigms can reduce security overhead. While imperative languages like Solidity require developers to manually implement security checks, resource-oriented languages like Move encode safety guarantees in type systems. We present a preliminary mixed-methods study analyzing 12 functionally-equivalent contract pairs implemented in both Solidity and Move by the same development team, complemented by a survey of 11 developers experienced in both languages. Quantitative analysis reveals that Move reduces explicit security overhead by 60\\% (security check density: 6.7% vs. 16.8%, p=0.002, Cohen's d=-1.75) at the cost of 47% larger code size (p=0.002, d=1.90), while maintaining identical cyclomatic complexity. Developer surveys show moderate learning difficulty but higher safety confidence in Move (Median=6/7, 10 of 11 above neutral), with 55% preferring Move for security-critical applications despite ecosystem maturity gaps. These preliminary findings suggest resource-oriented paradigms shift security from runtime validation to compile-time guarantees, though adoption requires investment in learning and tooling. The controlled comparison provides initial evidence for paradigm effects on smart contract development, informing language selection decisions and identifying opportunities for improved developer resources.",
+    "authors": [
+      "Matteo Vaccargiu",
+      "Andrea Pinna",
+      "Maria Ilaria Lunesu",
+      "Giuseppe Destefanis"
+    ],
+    "published": "2026-04-29",
+    "arxiv_url": "https://arxiv.org/abs/2604.26727"
+  }
+}
