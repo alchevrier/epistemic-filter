@@ -324,7 +324,7 @@ The derivation in Step 4 is the first seed document. It is yours — it comes fr
 
 The difference: in Variant A, the seed is expert-constructed before iteration. In Variant B, one seed document exists after the first shattering, and the remainder of the seed is built by applying Variant A criteria from that new position.
 
-**Stop condition:** `len(limiting_beliefs_with_count ≥ 3) == 0` within your current domain scope. You are not looking for global completeness — only stability within the scope you have defined. The scope will expand as the coordinator agent develops.
+**Stop condition:** `len(limiting_beliefs_with_count ≥ 3) == 0` within your current domain scope. You are not looking for global completeness — only stability within the scope you have defined. The scope will expand as new domain seeds are added to the aggregate model.
 
 ### What Changes in the Pipeline
 
