@@ -233,7 +233,7 @@ def load_adapter_model(adapter_path: Path):
         bnb_4bit_compute_dtype=torch.bfloat16,
     ) if cuda_ok else None
 
-    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=False)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -241,8 +241,8 @@ def load_adapter_model(adapter_path: Path):
         BASE_MODEL,
         quantization_config=bnb_config,
         device_map="auto" if cuda_ok else "cpu",
-        trust_remote_code=True,
-        torch_dtype=torch.bfloat16,
+        trust_remote_code=False,
+        attn_implementation="eager",
     )
 
     print(f"Loading adapter: {adapter_path}")

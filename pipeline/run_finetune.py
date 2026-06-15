@@ -197,15 +197,15 @@ def dry_run(mix_path: Path) -> None:
                 bnb_4bit_compute_dtype=torch.bfloat16,
             )
 
-            tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+            tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=False)
 
             device_map = "cuda" if cuda_ok else "cpu"
             model = AutoModelForCausalLM.from_pretrained(
                 BASE_MODEL,
                 quantization_config=bnb_config if cuda_ok else None,
                 device_map=device_map,
-                trust_remote_code=True,
-                torch_dtype=torch.bfloat16,
+                trust_remote_code=False,
+                attn_implementation="eager",
             )
 
             params = sum(p.numel() for p in model.parameters())
@@ -317,7 +317,7 @@ def run_training(
             bnb_4bit_compute_dtype=torch.bfloat16,
         ) if cuda_ok else None
 
-        tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=False)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
 
@@ -325,8 +325,8 @@ def run_training(
             BASE_MODEL,
             quantization_config=bnb_config,
             device_map="auto" if cuda_ok else "cpu",
-            trust_remote_code=True,
-            torch_dtype=torch.bfloat16,
+            trust_remote_code=False,
+            attn_implementation="eager",
         )
         model = prepare_model_for_kbit_training(model)
 
