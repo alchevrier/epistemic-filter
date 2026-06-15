@@ -167,3 +167,87 @@ The framing traps most likely to appear in accepted corpus documents are the one
 - Minimum time to construct a valid seed: several days of careful reading and the prior statement writing. It cannot be done in an afternoon.
 - The seed is a statement of the curator's epistemic position. It is personal, not neutral. This is by design, not a limitation to be engineered away.
 - A practitioner who has not questioned the dominant paradigm of their field cannot construct a valid seed for this pipeline. They can construct a seed that scales the dominant paradigm. That is a different tool.
+
+---
+
+## Variant B — Founding-Claim-First (Non-Expert Path)
+
+The methodology above (Variant A) assumes the curator is already an expert — they have escaped at least one framing trap in their domain and can construct a seed from that position. Most practitioners are not yet experts. They are inside the dominant paradigm, accumulating beliefs within it.
+
+Variant B is for that case. It does not require an expert seed as input. It uses a **founding question** as the minimal starting condition and treats the seed as an emergent output of the iteration, not a prerequisite to it.
+
+### How Human Learning Actually Works
+
+Learning does not begin with a seed. It begins with naive exposure — encountering domain material without a coherent prior, accumulating beliefs incrementally within the available frame. Beliefs accumulate until a specific failure mode appears: a belief begins to require multiple compensation mechanisms to defend. At that point — and not before — the belief becomes visible as limiting. The frame shatters. A new one is built from the rubble. This is a Kuhnian paradigm shift at the individual level: normal science (accumulation within frame) → anomaly accumulation (compensation load increases) → crisis (belief becomes indefensible) → new frame.
+
+The seed, in this model, is not the starting point. It is what you have after the first shattering. It is the output of the process.
+
+### The Compensation Load Signal
+
+The key insight is that **compensation load is measurable before the shattering occurs**. You do not need to have already escaped the frame to detect that a belief is limiting. You only need to count:
+
+> How many independent mechanisms exist whose sole purpose is to compensate for this belief being treated as true?
+
+- "Dynamic allocation is necessary" → GC, object pools, arena allocators, slab allocators, bump pointer, finaliser chain, write barriers, card tables → 8+ compensation mechanisms → limiting belief
+- "Execution timing is undeclared" → scheduler, mutex, atomic, memory barrier, RCU, thread pool, interrupt handler, context switch → 8+ compensation mechanisms → limiting belief
+- "Static allocation is sufficient" → 0 compensation mechanisms → non-limiting
+
+A practitioner who cannot yet identify what is wrong with a belief can still count its compensation mechanisms. The count is observable from inside the frame. The wrongness is not.
+
+This is the accessible entry point: **you do not need to know the right answer. You only need to count the cost of the current answer.**
+
+### Variant B Process
+
+**Step 0 — Choose a founding question.** Not a claim — a question. A claim assumes an answer; a question does not. The founding question should be the most basic thing you are uncertain about in your domain.
+
+Examples:
+- "What is the minimum that must be true for deterministic execution to be possible?"
+- "What would memory management look like if allocation bounds were always known?"
+- "What would a compiler know if it knew when every instruction would execute?"
+
+The founding question does not need to be answerable yet. It needs to be genuine — something you actually want to know, not something you already know the answer to.
+
+**Step 1 — Naive exposure with compensation counting.** Read broadly in the domain. For each significant claim you encounter, count its compensation mechanisms. Do not evaluate correctness — only count compensations. Record:
+
+```
+claim: "X is necessary"
+compensations: [list of mechanisms that exist because X is treated as true]
+count: N
+```
+
+Claims with count ≥ 3 are limiting belief candidates. Do not yet abandon them — accumulate them.
+
+**Step 2 — Wait for the crisis.** A limiting belief candidate becomes a crisis when:
+- Its compensation count keeps growing as you read more (new compensations keep appearing)
+- The compensations have their own compensations (second-order compensation)
+- You encounter material that handles the same problem with 0 or 1 compensations (anomaly)
+
+The anomaly is the trigger. It does not need to be from a paper or an authority. It can be a single sentence in a blog post, a comment in source code, or a design decision in a codebase that handles the same problem differently. When you see it, you will recognise it: "why don't they need the thing everyone else needs?"
+
+**Step 3 — Shatter and rebuild.** When the crisis is clear:
+1. State the limiting belief explicitly
+2. State what you are abandoning (the belief, not the domain)
+3. State the new founding claim that makes the compensations unnecessary
+4. Derive the first consequences of the new claim
+
+The derivation in Step 4 is the first seed document. It is yours — it comes from your own reasoning, not from a paper. It will be short, rough, and probably incomplete. That is correct. It is the founding document.
+
+**Step 4 — Iterate.** Now the founding-claim-first path merges with Variant A. You have a founding claim and one seed document. Apply Variant A Steps 2–6: select additional documents against the four criteria, audit for framing traps, compute the centroid, name the boundary, lock the seed.
+
+The difference: in Variant A, the seed is expert-constructed before iteration. In Variant B, one seed document exists after the first shattering, and the remainder of the seed is built by applying Variant A criteria from that new position.
+
+**Stop condition:** `len(limiting_beliefs_with_count ≥ 3) == 0` within your current domain scope. You are not looking for global completeness — only stability within the scope you have defined. The scope will expand as the coordinator agent develops.
+
+### What Changes in the Pipeline
+
+Nothing structural changes. The seed produced by Variant B feeds into the same pipeline as Variant A — embed, centroid, two-axis gate, reflection window, training. The difference is entirely in how the seed is constructed.
+
+The W-register entries from Variant B are the limiting beliefs identified in Step 1. They are already in the right format: claim, compensation count, degree (the degree is determinable after the shattering — before it, you only have the count, not the classification).
+
+### The Accessibility Gain
+
+Variant A requires escaping the frame before starting. Variant B requires only the ability to count compensations — a skill that can be taught and practiced without prior domain expertise. The compensation count is observable from inside the frame; the limiting belief is not.
+
+This is the key difference: Variant A is for practitioners who have already questioned the dominant paradigm. Variant B is for practitioners who are willing to count and wait for the crisis. The pipeline is the same. The entry requirement is different.
+
+The honest caveat: Variant B takes longer. The founding question to first shattering may take weeks or months of reading. The process cannot be rushed — the crisis must be genuine, not performed. A performed shattering (abandoning a belief you have not actually tested) produces a false new frame that will also require compensations. Count those too.
