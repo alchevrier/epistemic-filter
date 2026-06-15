@@ -9,6 +9,10 @@
 
 The two-axis quality gate (ADR-0001) admits documents that are domain-relevant and reason from first principles. It does not check whether those documents are *correct* relative to the seed corpus's foundational claims. A rigorous, domain-relevant paper that gets a key concept wrong is the most dangerous kind of false positive: the fine-tuned model will learn the wrong claim with high confidence, precisely because the surrounding reasoning is coherent and well-structured. Noise averages out across the corpus. A coherent wrong claim reinforces itself.
 
+**A claim is limiting if treating it as true requires multiple independent compensation mechanisms.** This is the operational definition used throughout the pipeline. The threshold is ≥ 3 compensation mechanisms — a count that is observable from inside any frame, without requiring the evaluator to already know the claim is wrong. (See ADR-0016 for the full definition and examples.)
+
+The known-wrong claims register (W-register) is the pipeline's record of limiting beliefs at different stages of structural failure. Detecting them in incoming documents before training is the function of this ADR.
+
 This is not a rare edge case. Academic literature contains papers that:
 - Claim locks are unavoidable in concurrent systems (contradicts the model's core claim)
 - Claim memory barriers are a necessary hardware primitive (contradicts compile-time ordering elimination)

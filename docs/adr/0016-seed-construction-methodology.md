@@ -17,6 +17,35 @@ This ADR defines the methodology a domain expert follows to construct a valid se
 
 ---
 
+## Definitions
+
+### Limiting Belief
+
+A belief is **limiting** if and only if treating it as true requires multiple independent compensation mechanisms to make the system work.
+
+The compensation mechanisms are the measurement. You do not need to know the belief is wrong. You do not need to have escaped the frame. You only need to count:
+
+> How many independent mechanisms exist whose sole purpose is to compensate for this belief being treated as true?
+
+**Threshold: ≥ 3 compensation mechanisms → limiting belief.**
+
+Examples:
+- "Execution timing is undeclared" → requires scheduler, mutex, memory barrier, RCU, context switch, interrupt handler, thread pool → 7+ compensations → limiting
+- "Memory lifetimes are undeclared" → requires GC, write barrier, card table, finaliser, object pool, arena allocator → 6+ compensations → limiting
+- "Static allocation is sufficient for declared channels" → 0 compensations → not limiting
+
+This definition is measurable from inside the frame. You do not need to know the belief is wrong to count its compensations. The count is observable to anyone who can read a system's architecture and ask "what exists only because of this belief?"
+
+### Core Belief vs Limiting Belief
+
+A **core belief** is load-bearing: it sustains your mental model, tooling choices, and professional practice. It is not wrong when you adopt it — it works. The word "limiting" is only visible in retrospect, after the compensation load becomes visible as a pattern rather than as normal engineering.
+
+A core belief becomes a limiting belief when its compensation count crosses the threshold. The transition is not a moment of wrongness — it is structural failure under increasing load. The belief can no longer carry what has been built on top of it without requiring more compensation than the original problem justified.
+
+**This is why the improvement cycle is possible without prior expertise:** you do not need to know the belief is wrong. You only need to count until the count tells you.
+
+---
+
 ## Decision
 
 ### What a Seed Is
