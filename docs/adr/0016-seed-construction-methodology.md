@@ -44,6 +44,28 @@ A core belief becomes a limiting belief when its compensation count crosses the 
 
 **This is why the improvement cycle is possible without prior expertise:** you do not need to know the belief is wrong. You only need to count until the count tells you.
 
+### The God-Concept Property
+
+A limiting belief in its prime has the same structure as a god concept: it is comforting precisely because it explains everything. The more a belief explains, the more load-bearing it feels, the more identity is invested in it. "Everything requires a scheduler" is not a failure of reasoning. It is a complete, coherent, internally consistent worldview validated by decades of practice. It explains every concurrency problem, every timing failure, every system design decision. It leaves nothing unexplained.
+
+This is why the crisis is not "I found an error." It is "this no longer explains what I am seeing." The anomaly — a system that handles the same problem with 0 compensations — does not refute the belief. It is an unexplained fact that the belief cannot absorb. The belief that explained everything now fails to explain one thing. That one thing is the crack.
+
+The crack is the entry point. The belief does not shatter from a logical refutation — it fails from a single unexplained observation that the belief has no room for.
+
+**Why the framing-trap degree is the most dangerous:** a framing-trap is a belief that has successfully incorporated the evidence against itself. When RCU is invented, it does not crack "concurrent reads require locks" — it becomes the proof that the problem is solved. The anomaly (concurrent reads without locks) is absorbed and reframed as a solution within the existing belief. The belief gets stronger. The compensation count rises, but the framing makes each new compensation look like progress rather than load. The crack never forms because every anomaly is interpreted as confirmation.
+
+A framing-trap is a god-concept that has learned to eat its own refutations.
+
+**Degree mapping to the belief lifecycle:**
+
+| Degree | Position in lifecycle | Relationship to anomaly |
+|---|---|---|
+| scoped | Belief still explains everything within its boundary | Crack is visible but contained — anomaly exists outside the scope |
+| near-miss | Belief has failed; replacement preserves the meta-frame | Anomaly absorbed by relocating the problem, not eliminating it |
+| misattributed | Belief correctly identifies load but names the wrong source | Anomaly partially absorbed — some things still unexplained |
+| framing-trap | Belief explains everything including the compensations | Anomaly absorbed and reframed as progress — crack never forms |
+| false | Belief never explained what it claimed to explain | No sustaining phase; comfort was borrowed from adjacent beliefs |
+
 ---
 
 ## Decision
