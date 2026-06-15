@@ -37,6 +37,8 @@ import os
 import sys
 from pathlib import Path
 
+# Reduce CUDA memory fragmentation — must be set before torch is imported
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_MIX_PATH    = REPO_ROOT / "corpus" / "training" / "mix.jsonl"
 DEFAULT_ADAPTER_DIR = REPO_ROOT / "corpus" / "adapters"
@@ -58,9 +60,9 @@ TRAINING_SCHEDULE = [
     ((4, 6), 5e-5, 2.0),   # double seed weight in consolidation phase
 ]
 
-MAX_SEQ_LENGTH = 2048     # Phi-3 Mini context window (4k, use half for safety)
-TRAIN_BATCH    = 2        # per-device batch size (RTX 4060 8GB)
-GRAD_ACCUM     = 4        # effective batch = 8
+MAX_SEQ_LENGTH = 1024     # capped: no flash-attn, packing disabled, 8GB VRAM
+TRAIN_BATCH    = 1        # per-device batch size (RTX 4060 8GB)
+GRAD_ACCUM     = 8        # effective batch = 8
 WARMUP_STEPS   = 100
 
 # ---------------------------------------------------------------------------
@@ -274,9 +276,8 @@ def run_training(
         AutoModelForCausalLM,
         AutoTokenizer,
         BitsAndBytesConfig,
-        TrainingArguments,
     )
-    from trl import SFTTrainer
+    from trl import SFTTrainer, SFTConfig
     from datasets import Dataset
 
     adapter_dir.mkdir(parents=True, exist_ok=True)
@@ -361,7 +362,7 @@ def run_training(
 
         print(f"\n--- Phase {phase_idx + 1}: epochs {start_epoch}-{end_epoch}, lr={lr} ---")
 
-        args = TrainingArguments(
+        args = SFTConfig(
             output_dir=str(checkpoint_dir),
             num_train_epochs=phase_epochs,
             per_device_train_batch_size=TRAIN_BATCH,
@@ -377,17 +378,19 @@ def run_training(
             report_to="none",
             optim="paged_adamw_8bit" if cuda_ok else "adamw_torch",
             seed=42,
+            gradient_checkpointing=True,
+            gradient_checkpointing_kwargs={"use_reentrant": False},
             dataloader_num_workers=0,
+            dataset_text_field="text",
+            max_length=MAX_SEQ_LENGTH,
+            packing=False,
         )
 
         trainer = SFTTrainer(
             model=model,
-            tokenizer=tokenizer,
+            processing_class=tokenizer,
             train_dataset=phase_dataset,
-            dataset_text_field="text",
-            max_seq_length=MAX_SEQ_LENGTH,
             args=args,
-            packing=True,   # pack multiple short examples into one sequence
         )
 
         print(f"Starting training phase {phase_idx + 1} ...")
