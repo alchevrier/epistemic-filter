@@ -1,0 +1,154 @@
+{
+  "version": "seed_v1",
+  "created": "2026-06-15T14:22:14.080354+00:00",
+  "embed_model": "nomic-embed-text",
+  "seed_dir": "/home/alchevrier/Repositories/clock-aware-programming/docs",
+  "document_count": 22,
+  "centroid_shape": [
+    768
+  ],
+  "similarity_stats": {
+    "min": 0.835,
+    "max": 0.9745,
+    "mean": 0.914,
+    "std": 0.0413
+  },
+  "target_range": [
+    0.75,
+    0.92
+  ],
+  "documents": [
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0001-naming-clock-aware-programming.md",
+      "relative_path": "docs/adr/0001-naming-clock-aware-programming.md",
+      "approx_tokens": 876,
+      "centroid_similarity": 0.835
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0002-cpu-partition-model.md",
+      "relative_path": "docs/adr/0002-cpu-partition-model.md",
+      "approx_tokens": 2526,
+      "centroid_similarity": 0.8761
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0003-rcu-elimination-via-compile-time-proofs.md",
+      "relative_path": "docs/adr/0003-rcu-elimination-via-compile-time-proofs.md",
+      "approx_tokens": 2248,
+      "centroid_similarity": 0.8717
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0004-rust-as-implementation-vehicle.md",
+      "relative_path": "docs/adr/0004-rust-as-implementation-vehicle.md",
+      "approx_tokens": 7016,
+      "centroid_similarity": 0.929
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0005-unified-system-configuration.md",
+      "relative_path": "docs/adr/0005-unified-system-configuration.md",
+      "approx_tokens": 3607,
+      "centroid_similarity": 0.8872
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0006-poll-mode-self-regulating-network-stack.md",
+      "relative_path": "docs/adr/0006-poll-mode-self-regulating-network-stack.md",
+      "approx_tokens": 3164,
+      "centroid_similarity": 0.9163
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0007-memory-ordering-elimination.md",
+      "relative_path": "docs/adr/0007-memory-ordering-elimination.md",
+      "approx_tokens": 2299,
+      "centroid_similarity": 0.8956
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0008-clock-aware-memory-management.md",
+      "relative_path": "docs/adr/0008-clock-aware-memory-management.md",
+      "approx_tokens": 2700,
+      "centroid_similarity": 0.8866
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0009-implied-hardware-architecture.md",
+      "relative_path": "docs/adr/0009-implied-hardware-architecture.md",
+      "approx_tokens": 5566,
+      "centroid_similarity": 0.9304
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/adr/0010-channel-based-io.md",
+      "relative_path": "docs/adr/0010-channel-based-io.md",
+      "approx_tokens": 4883,
+      "centroid_similarity": 0.9309
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/01-clock-aware-programming.md",
+      "relative_path": "docs/papers/01-clock-aware-programming.md",
+      "approx_tokens": 14240,
+      "centroid_similarity": 0.9745
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/02-language.md",
+      "relative_path": "docs/papers/02-language.md",
+      "approx_tokens": 15538,
+      "centroid_similarity": 0.9635
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/03-os-and-runtime/01-starting-point-and-runtime.md",
+      "relative_path": "docs/papers/03-os-and-runtime/01-starting-point-and-runtime.md",
+      "approx_tokens": 8320,
+      "centroid_similarity": 0.959
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/03-os-and-runtime/02-the-os.md",
+      "relative_path": "docs/papers/03-os-and-runtime/02-the-os.md",
+      "approx_tokens": 12878,
+      "centroid_similarity": 0.9354
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/03-os-and-runtime/03-execution.md",
+      "relative_path": "docs/papers/03-os-and-runtime/03-execution.md",
+      "approx_tokens": 15435,
+      "centroid_similarity": 0.9528
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/03-os-and-runtime/04-memory.md",
+      "relative_path": "docs/papers/03-os-and-runtime/04-memory.md",
+      "approx_tokens": 21609,
+      "centroid_similarity": 0.9678
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/03-os-and-runtime/05-signals-exceptions.md",
+      "relative_path": "docs/papers/03-os-and-runtime/05-signals-exceptions.md",
+      "approx_tokens": 988,
+      "centroid_similarity": 0.8385
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/03-os-and-runtime/06-services-security.md",
+      "relative_path": "docs/papers/03-os-and-runtime/06-services-security.md",
+      "approx_tokens": 5682,
+      "centroid_similarity": 0.928
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/03-os-and-runtime/07-hardware-backing.md",
+      "relative_path": "docs/papers/03-os-and-runtime/07-hardware-backing.md",
+      "approx_tokens": 1652,
+      "centroid_similarity": 0.8828
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/03-os-and-runtime/08-ml-substrate.md",
+      "relative_path": "docs/papers/03-os-and-runtime/08-ml-substrate.md",
+      "approx_tokens": 903,
+      "centroid_similarity": 0.8549
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/03-os-and-runtime/09-conclusion.md",
+      "relative_path": "docs/papers/03-os-and-runtime/09-conclusion.md",
+      "approx_tokens": 3464,
+      "centroid_similarity": 0.9486
+    },
+    {
+      "path": "/home/alchevrier/Repositories/clock-aware-programming/docs/papers/04-hardware-architecture.md",
+      "relative_path": "docs/papers/04-hardware-architecture.md",
+      "approx_tokens": 10718,
+      "centroid_similarity": 0.9433
+    }
+  ]
+}
