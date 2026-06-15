@@ -186,7 +186,34 @@ This is the critical distinction: a core belief sustains you until it doesn't. T
 
 Variant B is for that case. It does not require an expert seed as input. It uses a **founding question** as the minimal starting condition and treats the seed as an emergent output of the iteration, not a prerequisite to it.
 
-### How Human Learning Actually Works
+### The Improvement Cycle
+
+Whether expert or non-expert, the cognitive process of improvement follows the same structure:
+
+1. **Identify** — find a belief whose compensation load is ≥ 3
+2. **Abandon** — give it up, not just weaken it. Partial abandonment preserves the frame.
+3. **Adopt** — derive a new mental model from first principles that requires 0 compensations for the same problem
+4. **Iterate** — repeat on the next belief
+5. **Force iteration until stable** — stop condition: `len(limiting_beliefs_with_count ≥ 3) == 0` within scope
+
+Step 2 is the hard one. A belief that has been load-bearing for years feels like knowledge, not a belief. Weakening it ("maybe GC isn't always necessary") preserves the frame. Abandoning it ("execution timing can be declared; GC compensates for not declaring it") exits the frame. The difference is whether the new position requires the old compensation mechanisms or not. If you weaken a belief and still need GC, you have not abandoned the belief — you have qualified it.
+
+### You Always Skim
+
+Every document encounter begins with a skim. This is not a shortcut — it is the primary cognitive operation. What changes between novice and expert is not whether they skim, but **what the skim is guided by**.
+
+| Stage | Skim is guided by | What gets flagged |
+|---|---|---|
+| Novice, no prior | Nothing — everything looks equally important | Random; high noise |
+| Variant B — compensation counting | Compensation load signal | "Does this add or reduce compensation on a belief I hold?" |
+| Variant A — seed centroid | Pattern match against pre-loaded prior | "Does this look like my seed?" |
+| Expert + fine-tuned model | Centroid + reasoning depth simultaneously | "Domain match AND derives from premises?" |
+
+The two-axis gate in this pipeline is the expert skim made explicit and automated. Domain relevance = centroid match = first-pass pattern recognition. Reasoning depth = structural derivation present = second-pass confirmation. The gate encodes what an expert does in 30 seconds of skimming.
+
+For Variant B practitioners, the skim during naive exposure is guided by compensation counting rather than centroid similarity. The question is not "does this look like my seed?" (no seed exists yet) but "does this document add new compensation mechanisms to a belief I currently hold, or does it show the same problem handled with fewer?" That question is answerable from inside the frame, before the crisis, without a pre-existing prior.
+
+The skim is also the mechanism by which the filter spots what is missing. A document that neither adds compensations nor reduces them on any current belief is outside the current scope. A document that reveals a compensation the curator had not counted is a gap discovery — it expands the W-register. A document that shows the same problem with 0 compensations is the anomaly that triggers the crisis.
 
 Learning does not begin with a seed. It begins with naive exposure — encountering domain material without a coherent prior, accumulating beliefs incrementally within the available frame. Beliefs accumulate until a specific failure mode appears: a belief begins to require multiple compensation mechanisms to defend. At that point — and not before — the belief becomes visible as limiting. The frame shatters. A new one is built from the rubble. This is a Kuhnian paradigm shift at the individual level: normal science (accumulation within frame) → anomaly accumulation (compensation load increases) → crisis (belief becomes indefensible) → new frame.
 
