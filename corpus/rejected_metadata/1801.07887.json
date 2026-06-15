@@ -1,0 +1,31 @@
+{
+  "arxiv_id": "1801.07887",
+  "scored_at": "2026-06-15T14:27:51.186899+00:00",
+  "decision": "REJECT",
+  "reason": "fails both axes",
+  "text_source": "abstract_only",
+  "axis1_domain_relevance": 0.6289,
+  "axis1_pass": false,
+  "axis2_reasoning_depth": 0.1371,
+  "axis2_pass": false,
+  "reasoning_depth_features": {
+    "premise_declaration": 0.0,
+    "derivation_chain": 0.0,
+    "frame_exposure": 0.0,
+    "assumption_challenge": 0.871,
+    "conclusion_specificity": 0.0,
+    "frame_trap_absence": 1.0
+  },
+  "metadata": {
+    "arxiv_id": "1801.07887",
+    "title": "Impact of Batch Size on Stopping Active Learning for Text Classification",
+    "abstract": "When using active learning, smaller batch sizes are typically more efficient from a learning efficiency perspective. However, in practice due to speed and human annotator considerations, the use of larger batch sizes is necessary. While past work has shown that larger batch sizes decrease learning efficiency from a learning curve perspective, it remains an open question how batch size impacts methods for stopping active learning. We find that large batch sizes degrade the performance of a leading stopping method over and above the degradation that results from reduced learning efficiency. We analyze this degradation and find that it can be mitigated by changing the window size parameter of how many past iterations of learning are taken into account when making the stopping decision. We find that when using larger batch sizes, stopping methods are more effective when smaller window sizes are used.",
+    "authors": [
+      "Garrett Beatty",
+      "Ethan Kochis",
+      "Michael Bloodgood"
+    ],
+    "published": "2018-01-24",
+    "arxiv_url": "https://arxiv.org/abs/1801.07887"
+  }
+}

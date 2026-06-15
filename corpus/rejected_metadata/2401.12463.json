@@ -1,0 +1,34 @@
+{
+  "arxiv_id": "2401.12463",
+  "scored_at": "2026-06-15T14:27:26.170162+00:00",
+  "decision": "REJECT",
+  "reason": "fails both axes",
+  "text_source": "full_text_html",
+  "axis1_domain_relevance": 0.6747,
+  "axis1_pass": false,
+  "axis2_reasoning_depth": 0.0783,
+  "axis2_pass": false,
+  "reasoning_depth_features": {
+    "premise_declaration": 0.083,
+    "derivation_chain": 0.027,
+    "frame_exposure": 0.0,
+    "assumption_challenge": 0.006,
+    "conclusion_specificity": 0.002,
+    "frame_trap_absence": 0.973
+  },
+  "metadata": {
+    "arxiv_id": "2401.12463",
+    "title": "A Quantum Inspired Bi-level Optimization Algorithm for the First Responder Network Design Problem",
+    "abstract": "In the aftermath of a sudden catastrophe, First Responders (FR) strive to promptly reach and rescue immobile victims. Simultaneously, other mobile individuals take roads to evacuate the affected region, or access shelters. The escalated traffic congestion significantly hinders critical FR operations if they share some of the same roads. A proposal from the Turkish Ministry of Transportation and Infrastructure being discussed for implementation is to allocate a subset of road segments for use by FRs only, mark them clearly, and pre-communicate them to the citizens. For the FR paths under consideration: (i) there should exist an FR path from designated entry points to each demand point in the network, and (ii) evacuees try to leave the network (through some exit points following the selfish routing principle) in the shortest time possible when they know that certain segments are not available to them. We develop a mixed integer non-linear programming formulation for this First Responder Network Design Problem (FRNDP). We solve FRNDP using a novel hybrid quantum-classical heuristic building on the Graver Augmented Multi-Seed Algorithm (GAMA). Using the flow-balance constraints for the FR and evacuee paths, we use a Quadratic Unconstrained Binary Optimization (QUBO) model to obtain a partial Graver Bases to move between the feasible solutions of FRNDP. To efficiently explore the solution space for high-quality solutions, we develop a novel bi-level nested GAMA within GAMA: GAGA. We test GAGA on random graph instances of various sizes and instances related to an expected Istanbul earthquake. Comparing GAGA against a state-of-the-art exact algorithm for traditional formulations, we find that GAGA offers a promising alternative approach. We hope our work encourages further study of quantum (inspired) algorithms to tackle complex optimization models from other application domains.",
+    "authors": [
+      "Anthony Karahalios",
+      "Sridhar Tayur",
+      "Ananth Tenneti",
+      "Amirreza Pashapour",
+      "F. Sibel Salman",
+      "Bar\u0131\u015f Y\u0131ld\u0131z"
+    ],
+    "published": "2024-01-23",
+    "arxiv_url": "https://arxiv.org/abs/2401.12463"
+  }
+}
