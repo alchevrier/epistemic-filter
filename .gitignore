@@ -1,2 +1,3 @@
 .venv/
 corpus/training/
+corpus/adapters/
