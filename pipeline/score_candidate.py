@@ -73,9 +73,10 @@ FEATURE_WEIGHTS = {
 # ArXiv fetching
 # ---------------------------------------------------------------------------
 
-ARXIV_API = "http://export.arxiv.org/api/query?id_list={id}"
+ARXIV_API  = "http://export.arxiv.org/api/query?id_list={id}"
 ARXIV_HTML = "https://arxiv.org/html/{id}"
 ARXIV_ABS  = "https://arxiv.org/abs/{id}"
+AR5IV_HTML = "https://ar5iv.labs.arxiv.org/html/{id}"   # fallback when arxiv HTML unavailable
 
 
 def parse_arxiv_id(raw: str) -> str:
@@ -137,23 +138,25 @@ def fetch_metadata(arxiv_id: str) -> dict:
 def fetch_full_text(arxiv_id: str) -> str | None:
     """
     Attempt to fetch the HTML version of the paper (ADR-0004: prefer HTML).
+    Falls back to ar5iv.labs.arxiv.org if arxiv.org/html is unavailable.
     Returns cleaned plain text, or None if unavailable.
     """
-    url = ARXIV_HTML.format(id=arxiv_id)
-    try:
-        resp = requests.get(url, timeout=60, headers={"User-Agent": "epistemic-filter/1.0"})
-        if resp.status_code != 200:
-            return None
-        # Strip HTML tags naively — good enough for embedding
-        text = re.sub(r"<[^>]+>", " ", resp.text)
-        text = re.sub(r"&[a-z]+;", " ", text)    # HTML entities
+    def _extract(html: str) -> str:
+        text = re.sub(r"<[^>]+>", " ", html)
+        text = re.sub(r"&[a-z]+;", " ", text)
         text = re.sub(r"\s+", " ", text).strip()
-        # Drop navigation boilerplate at start/end (heuristic: first 500 chars)
         if len(text) > 1000:
             text = text[500:]
         return text
-    except requests.exceptions.RequestException:
-        return None
+
+    for url in [ARXIV_HTML.format(id=arxiv_id), AR5IV_HTML.format(id=arxiv_id)]:
+        try:
+            resp = requests.get(url, timeout=60, headers={"User-Agent": "epistemic-filter/1.0"})
+            if resp.status_code == 200 and len(resp.text) > 2000:
+                return _extract(resp.text)
+        except requests.exceptions.RequestException:
+            continue
+    return None
 
 
 # ---------------------------------------------------------------------------
