@@ -250,9 +250,13 @@ def main() -> None:
     #
     # If accepted corpus is empty (early pipeline), scale from seed docs.
     if primary_docs:
-        # Primary is the natural anchor at 60%
-        primary_count = len(primary_docs)
-        total_target  = int(primary_count / TIER_RATIOS["primary"])
+        # Anchor to the larger of primary-based or seed-based total so that all
+        # seed docs (vocabulary source) and all contrastive examples (taxonomy)
+        # are always included even when the primary corpus is small.
+        primary_count      = len(primary_docs)
+        total_from_primary = int(primary_count / TIER_RATIOS["primary"])
+        total_from_seed    = int(len(seed_docs) / TIER_RATIOS["seed"])
+        total_target       = max(total_from_primary, total_from_seed)
     else:
         # No accepted docs yet — scale from seed at 10%, contrastive at 15%
         seed_count    = len(seed_docs)
@@ -263,7 +267,7 @@ def main() -> None:
         print()
 
     counts = {
-        "primary":      primary_count,
+        "primary":      max(primary_count, int(total_target * TIER_RATIOS["primary"])),
         "cross_domain": max(1, int(total_target * TIER_RATIOS["cross_domain"])) if cross_docs else 0,
         "contrastive":  max(1, int(total_target * TIER_RATIOS["contrastive"])) if contrastive_docs else 0,
         "seed":         max(1, int(total_target * TIER_RATIOS["seed"])),
