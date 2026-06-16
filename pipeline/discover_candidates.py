@@ -60,70 +60,70 @@ S2_CITATIONS  = "https://api.semanticscholar.org/graph/v1/paper/arXiv:{id}/citat
 # ---------------------------------------------------------------------------
 
 SEARCH_QUERIES = [
-    # Compile-time timing / dispatch
+    # Time-triggered architecture / TDMA formal (Kopetz TTA, FlexRay, TT-Ethernet)
+    (
+        "(cat:cs.OS OR cat:cs.AR OR cat:cs.NI)",
+        '"time-triggered" AND ("formal" OR "deterministic" OR "verification" OR "scheduling")',
+    ),
+    # Temporal isolation / time protection (seL4, capability OS)
+    (
+        "(cat:cs.OS OR cat:cs.CR)",
+        '("temporal isolation" OR "time protection" OR "timing channel") AND ("kernel" OR "hypervisor" OR "verified")',
+    ),
+    # WCET static analysis — tighter focus than previous (abstract interpretation, ILP)
     (
         "(cat:cs.OS OR cat:cs.PL OR cat:cs.AR)",
-        '"compile-time" AND ("execution budget" OR "timing guarantee" OR "dispatch table")',
+        '"worst-case execution time" AND ("abstract interpretation" OR "implicit path" OR "integer linear")',
     ),
-    # Execution window / temporal partitioning (ADR-0002 vocabulary)
+    # Time-sensitive networking / deterministic Ethernet (TSN, IEEE 802.1Qbv)
     (
-        "(cat:cs.OS OR cat:cs.PL OR cat:cs.AR)",
-        '"execution window" OR ("temporal partition" AND "real-time") OR ("time partition" AND "deterministic")',
+        "(cat:cs.NI OR cat:cs.AR)",
+        '("time-sensitive networking" OR "TSN" OR "802.1Qbv") AND ("formal" OR "scheduling" OR "deterministic")',
     ),
-    # Unikernel / library OS without preemption
+    # Partition scheduling / separation kernel (ARINC 653, MILS, LynxOS)
     (
-        "(cat:cs.OS)",
-        '("unikernel" OR "library OS" OR "exokernel") AND ("deterministic" OR "formal" OR "static")',
+        "(cat:cs.OS OR cat:cs.CR)",
+        '("partition scheduling" OR "separation kernel" OR "ARINC 653") AND ("real-time" OR "formal" OR "isolation")',
     ),
-    # Static scheduling formal
+    # Type-based resource bounds / compile-time cost (RAML, sized types)
+    (
+        "(cat:cs.PL OR cat:cs.LO)",
+        '("resource-aware" OR "sized types" OR "amortized complexity") AND ("type system" OR "compile-time" OR "static")',
+    ),
+    # Unikernel verified OS (MirageOS, Unikraft, HaLVM, IncludeOS)
+    (
+        "(cat:cs.OS OR cat:cs.PL)",
+        '("unikernel" OR "MirageOS" OR "Unikraft" OR "IncludeOS") AND ("verified" OR "formal" OR "deterministic" OR "safe")',
+    ),
+    # Static task scheduling / rate-monotonic proof
     (
         "(cat:cs.OS OR cat:cs.AR)",
-        '"static scheduling" AND ("formal" OR "proof" OR "verified" OR "wcet")',
+        '("rate-monotonic" OR "EDF" OR "cyclic executive") AND ("formal" OR "proof" OR "verified" OR "schedulability")',
     ),
-    # Partitioned global address space / static memory layout
+    # Ownership + real-time / Rust embedded systems formal
     (
-        "(cat:cs.PL OR cat:cs.AR OR cat:cs.DC)",
-        '("static memory" OR "compile-time allocation" OR "region-based memory") AND ("deterministic" OR "formal" OR "real-time")',
+        "(cat:cs.PL OR cat:cs.OS)",
+        '("ownership" OR "borrow") AND ("real-time" OR "embedded" OR "deterministic") AND ("Rust" OR "linear type" OR "affine")',
     ),
-    # Lock-freedom with formal reasoning
+    # Hardware time-partitioning / memory-mapped timing (FPGA, co-design)
     (
-        "(cat:cs.DC OR cat:cs.PL OR cat:cs.OS)",
-        '"lock-free" AND ("formal proof" OR "linearizability" OR "correctness" OR "verified")',
+        "(cat:cs.AR OR cat:cs.OS)",
+        '("time partition" OR "temporal partition") AND ("hardware" OR "FPGA" OR "co-design" OR "reconfigurable")',
     ),
-    # Memory ordering elimination
+    # Compile-time memory layout / static allocation formal
     (
-        "(cat:cs.AR OR cat:cs.PL OR cat:cs.OS)",
-        '"memory ordering" AND ("elimination" OR "relaxed" OR "compile-time" OR "static")',
+        "(cat:cs.PL OR cat:cs.AR)",
+        '("compile-time" OR "static allocation") AND ("memory layout" OR "stack bound" OR "region") AND ("formal" OR "proof" OR "verified")',
     ),
-    # Wait-free deterministic
+    # Deterministic replay / causal consistency compile-time
     (
-        "(cat:cs.DC OR cat:cs.OS)",
-        '"wait-free" AND ("deterministic" OR "bounded" OR "worst-case")',
+        "(cat:cs.OS OR cat:cs.PL OR cat:cs.DC)",
+        '("deterministic execution" OR "deterministic replay") AND ("compile-time" OR "static" OR "formal")',
     ),
-    # Poll-mode / kernel-bypass networking
+    # Poll-mode / kernel-bypass with determinism guarantees
     (
         "(cat:cs.NI OR cat:cs.OS)",
-        '("poll mode" OR "kernel bypass" OR "DPDK" OR "io_uring") AND ("deterministic" OR "latency" OR "zero-copy")',
-    ),
-    # CPU partitioning / isolation
-    (
-        "(cat:cs.OS OR cat:cs.AR)",
-        '("cpu partition" OR "core isolation" OR "spatial isolation") AND ("real-time" OR "deterministic")',
-    ),
-    # Channel-based concurrency formal
-    (
-        "(cat:cs.PL OR cat:cs.LO)",
-        '("channel" OR "CSP" OR "process algebra") AND ("deadlock-free" OR "formally" OR "type system")',
-    ),
-    # WCET analysis
-    (
-        "(cat:cs.OS OR cat:cs.PL OR cat:cs.AR)",
-        '"worst-case execution time" AND ("static analysis" OR "compile-time" OR "abstract interpretation")',
-    ),
-    # Ownership / borrow formal memory safety
-    (
-        "(cat:cs.PL OR cat:cs.LO)",
-        '("ownership type" OR "borrow checker" OR "linear type") AND ("formal" OR "proof" OR "soundness")',
+        '("kernel bypass" OR "DPDK" OR "RDMA") AND ("deterministic" OR "bounded latency" OR "worst-case")',
     ),
 ]
 
