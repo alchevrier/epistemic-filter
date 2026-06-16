@@ -286,6 +286,7 @@ def main() -> None:
         if result.returncode != 0:
             print(f"  [error] scorer exited {result.returncode}", file=sys.stderr)
         print(file=sys.stderr)
+        time.sleep(2)  # polite pause between candidates to avoid ArXiv 429
 
     print(
         f"Done. Processed {len(queue)} candidates.",

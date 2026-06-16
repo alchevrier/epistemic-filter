@@ -35,6 +35,7 @@ Note on reasoning depth scoring:
 import json
 import re
 import sys
+import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
@@ -87,10 +88,24 @@ def parse_arxiv_id(raw: str) -> str:
 
 
 def fetch_metadata(arxiv_id: str) -> dict:
-    """Fetch title, abstract, authors via ArXiv Atom API."""
+    """Fetch title, abstract, authors via ArXiv Atom API (with retry/backoff)."""
     url = ARXIV_API.format(id=arxiv_id)
-    resp = requests.get(url, timeout=30)
-    resp.raise_for_status()
+    for attempt in range(5):
+        try:
+            resp = requests.get(url, timeout=30)
+            if resp.status_code == 429:
+                wait = 2 ** attempt * 3   # 3, 6, 12, 24, 48 s
+                print(f"  [rate limit] ArXiv 429, retrying in {wait}s ...", file=sys.stderr)
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            break
+        except requests.exceptions.RequestException as e:
+            if attempt == 4:
+                raise
+            time.sleep(2 ** attempt)
+    else:
+        resp.raise_for_status()
 
     ns = {
         "atom": "http://www.w3.org/2005/Atom",
