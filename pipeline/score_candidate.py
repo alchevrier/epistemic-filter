@@ -56,7 +56,9 @@ REJECTED_DIR = REPO_ROOT / "corpus" / "rejected_metadata"
 OLLAMA_EMBED_URL = "http://localhost:11434/api/embed"
 EMBED_MODEL = "nomic-embed-text"
 
-DOMAIN_RELEVANCE_THRESHOLD = 0.75   # Lowered from 0.85 — domain is niche, best adjacent papers at 0.784
+DOMAIN_RELEVANCE_THRESHOLD = 0.70   # Lowered from 0.75 — centroid vocabulary too domain-specific;
+                                    # best published adjacent papers peak at 0.78. Will recompute
+                                    # centroid after first training round to shift toward published vocab.
 REASONING_DEPTH_THRESHOLD = 0.20    # Phase 1 heuristic baseline (ADR-0001 Phase 2 target: 0.80)
 
 # ADR-0011 feature weights
