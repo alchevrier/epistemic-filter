@@ -43,6 +43,7 @@ DEFAULT_OUT_DIR  = REPO_ROOT / "corpus" / "training"
 ACCEPTED_DIR      = REPO_ROOT / "corpus" / "accepted"
 WRONG_CLAIMS_PATH = REPO_ROOT / "corpus" / "known-wrong-claims.json"
 ANALOGY_PATH      = REPO_ROOT / "corpus" / "analogy-examples.json"
+C1_PATH           = REPO_ROOT / "corpus" / "c1-examples.json"
 
 # Tier ratios (for reporting only — actual counts use natural strategy below)
 TIER_RATIOS = {
@@ -51,6 +52,7 @@ TIER_RATIOS = {
     "contrastive":  0.15,
     "seed":         0.10,
     "analogy":      0.00,  # additive, not ratio-controlled
+    "c1":           0.00,  # additive, not ratio-controlled
 }
 
 # ---------------------------------------------------------------------------
@@ -234,6 +236,24 @@ def load_analogy_examples() -> list[dict]:
     return examples
 
 
+def load_c1_examples() -> list[dict]:
+    """Load C1 frame-identification Q&A training examples (chat format)."""
+    if not C1_PATH.exists():
+        return []
+    entries = json.loads(C1_PATH.read_text(encoding="utf-8"))
+    examples = []
+    for entry in entries:
+        text = phi3_chat(SYSTEM_PROMPT, entry["question"], entry["answer"])
+        examples.append({
+            "text": text,
+            "tier": "c1",
+            "source": f"corpus/c1-examples.json#{entry['id']}",
+            "c1_id": entry["id"],
+            "word_count": len(text.split()),
+        })
+    return examples
+
+
 def replicate_to_target(docs: list[dict], target_count: int) -> list[dict]:
     """
     Replicate a list of documents (with shuffling) to reach approximately
@@ -283,6 +303,10 @@ def main() -> None:
     analogy_docs = load_analogy_examples()
     print(f"  {len(analogy_docs)} analogy examples")
 
+    print("Loading C1 frame-identification examples ...")
+    c1_docs = load_c1_examples()
+    print(f"  {len(c1_docs)} C1 examples")
+
     total_base = len(seed_docs) + len(primary_docs) + len(cross_docs) + len(contrastive_docs)
     if total_base == 0:
         print("\nERROR: No documents found in any tier.")
@@ -297,6 +321,7 @@ def main() -> None:
     # to ensure label/mechanism coverage.
     CONTRASTIVE_REPS = 2  # 2x ensures each degree label seen multiple times per epoch
     ANALOGY_REPS     = 2  # 2x ensures each mechanism mapping seen multiple times per epoch
+    C1_REPS          = 2  # 2x ensures each assumption-removal pattern seen multiple times
 
     if primary_docs:
         counts = {
@@ -305,6 +330,7 @@ def main() -> None:
             "seed":         len(seed_docs),                              # 1x, full vocabulary
             "contrastive":  len(contrastive_docs) * CONTRASTIVE_REPS,   # 2x, degree taxonomy
             "analogy":      len(analogy_docs) * ANALOGY_REPS,           # 2x, mechanism mapping
+            "c1":           len(c1_docs) * C1_REPS,                     # 2x, assumption-removal
         }
     else:
         # No accepted docs yet — seed + contrastive only
@@ -317,6 +343,7 @@ def main() -> None:
             "seed":         len(seed_docs),
             "contrastive":  len(contrastive_docs) * CONTRASTIVE_REPS,
             "analogy":      len(analogy_docs) * ANALOGY_REPS,
+            "c1":           len(c1_docs) * C1_REPS,
         }
 
     print("Tier counts:")
@@ -332,6 +359,7 @@ def main() -> None:
         "seed":         replicate_to_target(seed_docs,        counts["seed"]),
         "contrastive":  replicate_to_target(contrastive_docs, counts["contrastive"]),
         "analogy":      replicate_to_target(analogy_docs,     counts["analogy"]),
+        "c1":           replicate_to_target(c1_docs,          counts["c1"]),
     }
 
     # --- Merge and shuffle ---
@@ -354,7 +382,7 @@ def main() -> None:
     with mix_path.open("w", encoding="utf-8") as fh:
         for doc in all_docs:
             line = {"text": doc["text"]}
-            for k in ("tier", "source", "arxiv_id", "wrong_claim_id", "degree", "analogy_id", "domain"):
+            for k in ("tier", "source", "arxiv_id", "wrong_claim_id", "degree", "analogy_id", "domain", "c1_id"):
                 if k in doc:
                     line[k] = doc[k]
             fh.write(json.dumps(line, ensure_ascii=False) + "\n")

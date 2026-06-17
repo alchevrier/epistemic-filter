@@ -202,22 +202,23 @@ def generate_adapter(
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user",   "content": question},
     ]
-    input_ids = tokenizer.apply_chat_template(
+    prompt_text = tokenizer.apply_chat_template(
         messages,
         add_generation_prompt=True,
-        return_tensors="pt",
-    ).to(device)
+        tokenize=False,
+    )
+    inputs = tokenizer(prompt_text, return_tensors="pt").to(device)
 
     with torch.no_grad():
         out = model.generate(
-            input_ids,
+            **inputs,
             max_new_tokens=max_tokens,
             temperature=temperature,
             do_sample=temperature > 0,
             pad_token_id=tokenizer.eos_token_id,
         )
 
-    generated = out[0][input_ids.shape[1]:]
+    generated = out[0][inputs["input_ids"].shape[1]:]
     return tokenizer.decode(generated, skip_special_tokens=True).strip()
 
 
