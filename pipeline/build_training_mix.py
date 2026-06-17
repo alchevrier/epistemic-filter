@@ -6,33 +6,28 @@ Reads:
     corpus/accepted/*/             — accepted documents (text.txt + record.json)
     corpus/seed/                   — seed corpus (clock-aware-programming docs)
     corpus/known-wrong-claims.json — W-register for contrastive examples
+    corpus/analogy-examples.json   — C3 cross-domain analogy Q&A pairs
 
 Writes:
     corpus/training/mix.jsonl      — full training dataset, JSONL format
     corpus/training/manifest.json  — stats and split summary
 
 Format of each JSONL line:
-    {"text": "...", "tier": "primary|cross_domain|contrastive|seed", "source": "..."}
+    {"text": "<Phi-3 chat-template string>", "tier": "...", "source": "..."}
 
-Tier ratios (ADR-0012):
-    primary      60%  — accepted corpus, next-token prediction
-    cross_domain 15%  — accepted corpus docs tagged as cross-domain, with bridge annotation
-    contrastive  15%  — W-register contrastive pairs (CONTEXT / CLAIM / DEGREE / REFUTATION / BRIDGE)
-    seed         10%  — seed corpus repeated to anchor the prior every epoch
+All training examples are formatted using the Phi-3-mini-instruct chat template:
+    <|system|>\n{system}<|end|>\n<|user|>\n{user}<|end|>\n<|assistant|>\n{asst}<|end|>\n
+
+Tier strategy (natural counts, minimal replication):
+    primary      — accepted corpus, 1x (natural count, no replication)
+    cross_domain — accepted cross-domain docs, 1x
+    seed         — seed corpus, 1x (covers vocabulary and frame)
+    contrastive  — W-register claims, 2x (covers all 5 degree labels multiple times)
+    analogy      — C3 cross-domain Q&A pairs, 2x (covers mechanism mapping)
 
 Usage:
-    python3 pipeline/build_training_mix.py [--seed-dir PATH] [--out-dir PATH] [--epoch-tokens N]
-
-    --seed-dir PATH     Path to seed corpus directory (default: ../clock-aware-programming/docs)
-    --out-dir PATH      Output directory (default: corpus/training)
-    --epoch-tokens N    Target epoch token count for ratio replication (default: 1_000_000)
+    python3 pipeline/build_training_mix.py [--seed-dir PATH] [--out-dir PATH]
     --no-shuffle        Preserve tier order in output (for inspection)
-
-Output format is compatible with the HuggingFace `datasets` / `trl` SFT trainer:
-    Each line is {"text": "<full document text>"} with optional metadata fields.
-    The 'text' field is the full training string — no prompt/response split for
-    primary/seed tiers (continuation/next-token prediction).
-    Contrastive examples use the structured format from ADR-0012.
 """
 
 import json
@@ -45,16 +40,47 @@ REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_SEED_DIR = Path("/home/alchevrier/Repositories/clock-aware-programming/docs")
 DEFAULT_OUT_DIR  = REPO_ROOT / "corpus" / "training"
 
-ACCEPTED_DIR     = REPO_ROOT / "corpus" / "accepted"
+ACCEPTED_DIR      = REPO_ROOT / "corpus" / "accepted"
 WRONG_CLAIMS_PATH = REPO_ROOT / "corpus" / "known-wrong-claims.json"
+ANALOGY_PATH      = REPO_ROOT / "corpus" / "analogy-examples.json"
 
-# ADR-0012 tier ratios
+# Tier ratios (for reporting only — actual counts use natural strategy below)
 TIER_RATIOS = {
     "primary":      0.60,
     "cross_domain": 0.15,
     "contrastive":  0.15,
     "seed":         0.10,
+    "analogy":      0.00,  # additive, not ratio-controlled
 }
+
+# ---------------------------------------------------------------------------
+# Phi-3-mini-instruct chat template
+# Format: <|system|>\n{s}<|end|>\n<|user|>\n{u}<|end|>\n<|assistant|>\n{a}<|end|>\n
+# ---------------------------------------------------------------------------
+
+SYSTEM_PROMPT = """\
+You reason within the clock-aware-programming frame. In this frame:
+- Execution windows can be declared at compile time.
+- Circuits declare when they run, for how long, and which memory regions they access.
+- The compiler proves the schedule before execution begins.
+- Mechanisms like schedulers, mutexes, memory barriers, and garbage collectors exist
+  as compensations for undeclared timing. When timing is declared, they become redundant.
+- A claim is 'scoped' if it is locally correct but presents a conditional truth as universal.
+- A claim is 'misattributed' if the observation is correct but the causal explanation is wrong.
+- A claim is a 'near-miss' if the diagnosis is right but the remedy relocates rather than
+  eliminates the underlying cause.
+- A claim is a 'framing-trap' if it is locally correct but frames a compensation as a solution.
+Answer clearly and directly. Name the assumption, state what changes when it is removed,
+and name the mechanism that becomes redundant or inapplicable."""
+
+
+def phi3_chat(system: str, user: str, asst: str) -> str:
+    """Format a single training example as a Phi-3-mini-instruct chat turn."""
+    return (
+        f"<|system|>\n{system}<|end|>\n"
+        f"<|user|>\n{user}<|end|>\n"
+        f"<|assistant|>\n{asst}<|end|>\n"
+    )
 
 # Cross-domain: accepted papers whose record lists these topic keywords in title/abstract
 CROSS_DOMAIN_KEYWORDS = [
@@ -68,42 +94,38 @@ CROSS_DOMAIN_KEYWORDS = [
     "wcet", "worst-case execution",
 ]
 
-# ---------------------------------------------------------------------------
-# Contrastive format (ADR-0012)
-# ---------------------------------------------------------------------------
+# User prompt template for C2 contrastive examples
+CONTRASTIVE_USER = """\
+Classify the following systems claim as: scoped / misattributed / near-miss / false / framing-trap.
+Name the assumption the claim depends on, then provide the clock-aware-programming refutation.
 
-CONTRASTIVE_TEMPLATE = """\
-[CONTEXT] The following claim appears in systems and concurrency literature. \
-It is partially or wholly incorrect within the clock-aware-programming frame. \
-The degree of incorrectness is annotated.
-[CLAIM] {claim}
-[DEGREE] {degree}
-[REFUTATION] {refutation}
-[BRIDGE] The claim rests on the assumption that execution timing is undeclared. \
-When timing is declared at compile time — via channel ownership, budget_ticks, \
-and the dispatch table — the mechanism the claim treats as necessary becomes \
-structurally redundant. The claim is correct within the frame it assumes; \
-it fails when that frame is replaced by compile-time declarations.\
-"""
+CLAIM: {claim}"""
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def load_seed_docs(seed_dir: Path) -> list[dict]:
-    """Load all .md files from the seed corpus directory."""
+    """Load all .md files from the seed corpus directory as chat-format continuations."""
     docs = []
     for f in sorted(seed_dir.rglob("*.md")):
         if f.name in ("index.md",):
             continue
         text = f.read_text(encoding="utf-8").strip()
-        if len(text.split()) < 50:  # skip stubs
+        words = text.split()
+        if len(words) < 50:  # skip stubs
             continue
+        # Document continuation: first 150 words as user context, rest as assistant
+        split = min(150, len(words) // 3)
+        user_ctx  = " ".join(words[:split])
+        asst_body = " ".join(words[split:split + 500])
+        user_msg  = f"Continue the following clock-aware programming text:\n\n{user_ctx}"
+        formatted = phi3_chat(SYSTEM_PROMPT, user_msg, asst_body)
         docs.append({
-            "text": text,
+            "text": formatted,
             "tier": "seed",
             "source": str(f.relative_to(seed_dir.parent)),
-            "word_count": len(text.split()),
+            "word_count": len(words),
         })
     return docs
 
@@ -135,15 +157,23 @@ def load_accepted_docs() -> tuple[list[dict], list[dict]]:
         haystack = title + " " + abstract
 
         is_cross = any(kw in haystack for kw in CROSS_DOMAIN_KEYWORDS)
+        words = text.split()
+        split = min(150, len(words) // 3)
+        user_ctx  = " ".join(words[:split])
+        asst_body = " ".join(words[split:split + 500])
+        prefix = "Continue the following clock-aware programming text"
+        if is_cross:
+            prefix = "Continue the following cross-domain reinforcement text (bridge: formal reasoning structures compatible with clock-aware programming)"
+        user_msg  = f"{prefix}:\n\n{user_ctx}"
+        formatted = phi3_chat(SYSTEM_PROMPT, user_msg, asst_body)
         entry = {
-            "text": text,
+            "text": formatted,
             "tier": "cross_domain" if is_cross else "primary",
             "source": f"corpus/accepted/{doc_dir.name}",
             "arxiv_id": record.get("arxiv_id", doc_dir.name),
-            "word_count": len(text.split()),
+            "word_count": len(words),
         }
         if is_cross:
-            entry["text"] = _prepend_bridge(text, meta)
             cross_domain.append(entry)
         else:
             primary.append(entry)
@@ -165,23 +195,40 @@ def _prepend_bridge(text: str, meta: dict) -> str:
 
 
 def load_contrastive_examples() -> list[dict]:
-    """Build contrastive training examples from the W-register."""
+    """Build contrastive Q&A training examples from the W-register (chat format)."""
     if not WRONG_CLAIMS_PATH.exists():
         return []
     claims = json.loads(WRONG_CLAIMS_PATH.read_text(encoding="utf-8"))
     examples = []
     for entry in claims:
-        text = CONTRASTIVE_TEMPLATE.format(
-            claim=entry["claim"],
-            degree=entry["degree"],
-            refutation=entry["refutation"],
-        )
+        user_msg = CONTRASTIVE_USER.format(claim=entry["claim"])
+        asst_msg = f"DEGREE: {entry['degree']}\n\n{entry['refutation']}"
+        text = phi3_chat(SYSTEM_PROMPT, user_msg, asst_msg)
         examples.append({
             "text": text,
             "tier": "contrastive",
             "source": f"corpus/known-wrong-claims.json#{entry['id']}",
             "wrong_claim_id": entry["id"],
             "degree": entry["degree"],
+            "word_count": len(text.split()),
+        })
+    return examples
+
+
+def load_analogy_examples() -> list[dict]:
+    """Load C3 cross-domain analogy Q&A training examples (chat format)."""
+    if not ANALOGY_PATH.exists():
+        return []
+    entries = json.loads(ANALOGY_PATH.read_text(encoding="utf-8"))
+    examples = []
+    for entry in entries:
+        text = phi3_chat(SYSTEM_PROMPT, entry["question"], entry["answer"])
+        examples.append({
+            "text": text,
+            "tier": "analogy",
+            "source": f"corpus/analogy-examples.json#{entry['id']}",
+            "analogy_id": entry["id"],
+            "domain": entry.get("domain", ""),
             "word_count": len(text.split()),
         })
     return examples
@@ -212,15 +259,12 @@ def main() -> None:
 
     seed_dir = DEFAULT_SEED_DIR
     out_dir  = DEFAULT_OUT_DIR
-    epoch_tokens = 1_000_000
 
     for i, a in enumerate(args):
         if a == "--seed-dir" and i + 1 < len(args):
             seed_dir = Path(args[i + 1])
         elif a == "--out-dir" and i + 1 < len(args):
             out_dir = Path(args[i + 1])
-        elif a == "--epoch-tokens" and i + 1 < len(args):
-            epoch_tokens = int(args[i + 1])
 
     # --- Load all tiers ---
     print("Loading seed corpus ...")
@@ -235,6 +279,10 @@ def main() -> None:
     contrastive_docs = load_contrastive_examples()
     print(f"  {len(contrastive_docs)} contrastive examples")
 
+    print("Loading analogy examples ...")
+    analogy_docs = load_analogy_examples()
+    print(f"  {len(analogy_docs)} analogy examples")
+
     total_base = len(seed_docs) + len(primary_docs) + len(cross_docs) + len(contrastive_docs)
     if total_base == 0:
         print("\nERROR: No documents found in any tier.")
@@ -244,46 +292,46 @@ def main() -> None:
     print()
 
     # --- Determine counts for each tier ---
-    # Strategy: use natural count for whichever tier has data, then replicate
-    # others to match the ADR-0012 ratios. The controlling tier is whichever
-    # is largest relative to its ratio — we don't over-replicate that one.
-    #
-    # If accepted corpus is empty (early pipeline), scale from seed docs.
+    # Natural count strategy: avoid over-replication which causes overfitting and
+    # format degradation. Replicate only short-form tiers (contrastive, analogy)
+    # to ensure label/mechanism coverage.
+    CONTRASTIVE_REPS = 2  # 2x ensures each degree label seen multiple times per epoch
+    ANALOGY_REPS     = 2  # 2x ensures each mechanism mapping seen multiple times per epoch
+
     if primary_docs:
-        # Anchor to the larger of primary-based or seed-based total so that all
-        # seed docs (vocabulary source) and all contrastive examples (taxonomy)
-        # are always included even when the primary corpus is small.
-        primary_count      = len(primary_docs)
-        total_from_primary = int(primary_count / TIER_RATIOS["primary"])
-        total_from_seed    = int(len(seed_docs) / TIER_RATIOS["seed"])
-        total_target       = max(total_from_primary, total_from_seed)
+        counts = {
+            "primary":      len(primary_docs),                           # 1x, no replication
+            "cross_domain": len(cross_docs),                             # 1x, no replication
+            "seed":         len(seed_docs),                              # 1x, full vocabulary
+            "contrastive":  len(contrastive_docs) * CONTRASTIVE_REPS,   # 2x, degree taxonomy
+            "analogy":      len(analogy_docs) * ANALOGY_REPS,           # 2x, mechanism mapping
+        }
     else:
-        # No accepted docs yet — scale from seed at 10%, contrastive at 15%
-        seed_count    = len(seed_docs)
-        total_target  = int(seed_count / TIER_RATIOS["seed"])
-        primary_count = 0
+        # No accepted docs yet — seed + contrastive only
         print("NOTE: No accepted documents yet. Building mix from seed + contrastive only.")
         print("      Run discovery pipeline to populate corpus/accepted/ before fine-tuning.")
         print()
+        counts = {
+            "primary":      0,
+            "cross_domain": 0,
+            "seed":         len(seed_docs),
+            "contrastive":  len(contrastive_docs) * CONTRASTIVE_REPS,
+            "analogy":      len(analogy_docs) * ANALOGY_REPS,
+        }
 
-    counts = {
-        "primary":      max(primary_count, int(total_target * TIER_RATIOS["primary"])),
-        "cross_domain": max(1, int(total_target * TIER_RATIOS["cross_domain"])) if cross_docs else 0,
-        "contrastive":  max(1, int(total_target * TIER_RATIOS["contrastive"])) if contrastive_docs else 0,
-        "seed":         max(1, int(total_target * TIER_RATIOS["seed"])),
-    }
-
-    print("Target tier counts:")
+    print("Tier counts:")
     for tier, count in counts.items():
-        print(f"  {tier:<14} {count:>5}  ({TIER_RATIOS[tier]*100:.0f}%)")
+        if count > 0:
+            print(f"  {tier:<14} {count:>5}")
     print()
 
     # --- Replicate tiers to target counts ---
     batches = {
         "primary":      replicate_to_target(primary_docs,     counts["primary"]),
         "cross_domain": replicate_to_target(cross_docs,       counts["cross_domain"]),
-        "contrastive":  replicate_to_target(contrastive_docs, counts["contrastive"]),
         "seed":         replicate_to_target(seed_docs,        counts["seed"]),
+        "contrastive":  replicate_to_target(contrastive_docs, counts["contrastive"]),
+        "analogy":      replicate_to_target(analogy_docs,     counts["analogy"]),
     }
 
     # --- Merge and shuffle ---
@@ -299,23 +347,23 @@ def main() -> None:
     mix_path = out_dir / "mix.jsonl"
     manifest_path = out_dir / "manifest.json"
 
+    all_tiers = list(counts.keys())
     word_total = 0
-    tier_stats: dict[str, dict] = {t: {"count": 0, "words": 0} for t in TIER_RATIOS}
+    tier_stats: dict[str, dict] = {t: {"count": 0, "words": 0} for t in all_tiers}
 
     with mix_path.open("w", encoding="utf-8") as fh:
         for doc in all_docs:
-            # Write only 'text' + light metadata to keep the file trainer-friendly
             line = {"text": doc["text"]}
-            # Include metadata as passthrough fields (ignored by most trainers)
-            for k in ("tier", "source", "arxiv_id", "wrong_claim_id", "degree"):
+            for k in ("tier", "source", "arxiv_id", "wrong_claim_id", "degree", "analogy_id", "domain"):
                 if k in doc:
                     line[k] = doc[k]
             fh.write(json.dumps(line, ensure_ascii=False) + "\n")
 
-            tier = doc["tier"]
+            tier = doc.get("tier", "unknown")
             wc   = doc.get("word_count", len(doc["text"].split()))
-            tier_stats[tier]["count"] += 1
-            tier_stats[tier]["words"] += wc
+            if tier in tier_stats:
+                tier_stats[tier]["count"] += 1
+                tier_stats[tier]["words"] += wc
             word_total += wc
 
     # Estimate token count (≈ words × 1.33 for English technical text)
@@ -327,14 +375,7 @@ def main() -> None:
         "total_documents": len(all_docs),
         "total_words": word_total,
         "estimated_tokens": token_estimate,
-        "epoch_token_target": epoch_tokens,
-        "epochs_to_cover_target": round(epoch_tokens / max(token_estimate, 1), 2),
         "tier_stats": tier_stats,
-        "tier_ratios_actual": {
-            t: round(tier_stats[t]["count"] / max(len(all_docs), 1), 3)
-            for t in TIER_RATIOS
-        },
-        "adr": "ADR-0012",
         "seed_dir": str(seed_dir),
         "shuffle": shuffle,
     }
@@ -349,8 +390,9 @@ def main() -> None:
     print()
     print("Tier breakdown:")
     for tier, stats in tier_stats.items():
-        actual_pct = stats["count"] / max(len(all_docs), 1) * 100
-        print(f"  {tier:<14} {stats['count']:>5} docs  {actual_pct:5.1f}%  {stats['words']:>8,} words")
+        if stats["count"] > 0:
+            actual_pct = stats["count"] / max(len(all_docs), 1) * 100
+            print(f"  {tier:<14} {stats['count']:>5} docs  {actual_pct:5.1f}%  {stats['words']:>8,} words")
     print()
     print(f"Manifest: {manifest_path.relative_to(REPO_ROOT)}")
 

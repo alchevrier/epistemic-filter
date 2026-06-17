@@ -198,19 +198,26 @@ def generate_adapter(
     """Generate an answer using a loaded HuggingFace model+adapter."""
     import torch
 
-    prompt = f"{SYSTEM_PROMPT}\n\n{question}"
-    inputs = tokenizer(prompt, return_tensors="pt").to(device)
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user",   "content": question},
+    ]
+    input_ids = tokenizer.apply_chat_template(
+        messages,
+        add_generation_prompt=True,
+        return_tensors="pt",
+    ).to(device)
 
     with torch.no_grad():
         out = model.generate(
-            **inputs,
+            input_ids,
             max_new_tokens=max_tokens,
             temperature=temperature,
             do_sample=temperature > 0,
             pad_token_id=tokenizer.eos_token_id,
         )
 
-    generated = out[0][inputs["input_ids"].shape[1]:]
+    generated = out[0][input_ids.shape[1]:]
     return tokenizer.decode(generated, skip_special_tokens=True).strip()
 
 
