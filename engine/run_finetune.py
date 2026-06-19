@@ -40,8 +40,15 @@ from pathlib import Path
 # Reduce CUDA memory fragmentation — must be set before torch is imported
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 REPO_ROOT = Path(__file__).parent.parent
-DEFAULT_MIX_PATH    = REPO_ROOT / "corpus" / "training" / "mix.jsonl"
-DEFAULT_ADAPTER_DIR = REPO_ROOT / "corpus" / "adapters"
+
+import sys
+DOMAIN_ROOT = REPO_ROOT / "domains" / "cap"
+for i, arg in enumerate(sys.argv):
+    if arg == "--domain" and i + 1 < len(sys.argv):
+        DOMAIN_ROOT = Path(sys.argv[i + 1])
+
+DEFAULT_MIX_PATH    = DOMAIN_ROOT / "corpus" / "training" / "mix.jsonl"
+DEFAULT_ADAPTER_DIR = DOMAIN_ROOT / "corpus" / "adapters"
 
 BASE_MODEL = "microsoft/Phi-3-mini-4k-instruct"
 
@@ -56,8 +63,8 @@ LORA_CONFIG = dict(
 
 TRAINING_SCHEDULE = [
     # (epoch_range_inclusive, lr, seed_weight_boost)
-    ((1, 3), 2e-4, 1.0),
-    ((4, 6), 5e-5, 2.0),   # double seed weight in consolidation phase
+    ((1, 5), 2e-4, 1.0),
+    ((6, 10), 5e-5, 2.0),   # double seed weight in consolidation phase
 ]
 
 MAX_SEQ_LENGTH = 1024     # capped: no flash-attn, packing disabled, 8GB VRAM
@@ -280,6 +287,13 @@ def run_training(
     from trl import SFTTrainer, SFTConfig
     from datasets import Dataset
 
+    def _display_path(path: Path) -> str:
+        """Return a repo-relative display path when possible, else absolute path."""
+        try:
+            return str(path.resolve().relative_to(REPO_ROOT.resolve()))
+        except ValueError:
+            return str(path.resolve())
+
     adapter_dir.mkdir(parents=True, exist_ok=True)
 
     # --- Load dataset ---
@@ -400,7 +414,7 @@ def run_training(
         phase_adapter = adapter_dir / f"adapter_phase{phase_idx + 1}"
         model.save_pretrained(str(phase_adapter))
         tokenizer.save_pretrained(str(phase_adapter))
-        print(f"Adapter saved: {phase_adapter.relative_to(REPO_ROOT)}")
+        print(f"Adapter saved: {_display_path(phase_adapter)}")
 
         # Save training metadata
         meta = {
@@ -418,16 +432,16 @@ def run_training(
 
         print(f"\nPhase {phase_idx + 1} complete.")
         print("Next: run benchmark evaluation:")
-        print(f"  python3 pipeline/evaluate_benchmark.py --adapter {phase_adapter.relative_to(REPO_ROOT)}")
+        print(f"  python3 pipeline/evaluate_benchmark.py --adapter {_display_path(phase_adapter)}")
 
     # Final merged adapter
     final_adapter = adapter_dir / "adapter_final"
     model.save_pretrained(str(final_adapter))
     tokenizer.save_pretrained(str(final_adapter))
-    print(f"\nFinal adapter saved: {final_adapter.relative_to(REPO_ROOT)}")
+    print(f"\nFinal adapter saved: {_display_path(final_adapter)}")
     print("\nTraining complete.")
     print("Run full benchmark evaluation:")
-    print(f"  python3 pipeline/evaluate_benchmark.py --adapter {final_adapter.relative_to(REPO_ROOT)}")
+    print(f"  python3 pipeline/evaluate_benchmark.py --adapter {_display_path(final_adapter)}")
 
 
 # ---------------------------------------------------------------------------

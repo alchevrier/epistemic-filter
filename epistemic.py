@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+import json
+
+def init_domain(domain_path):
+    dp = Path(domain_path)
+    dp.mkdir(parents=True, exist_exist=True)
+    (dp / "corpus" / "seed").mkdir(parents=True, exist_ok=True)
+    (dp / "benchmark" / "results").mkdir(parents=True, exist_ok=True)
+    
+    with open(dp / "benchmark" / "questions.json", "w") as f:
+        json.dump({"total_questions": 0, "components": {}, "questions": []}, f, indent=2)
+    with open(dp / "corpus" / "seed" / "rules.md", "w") as f:
+        f.write("# Rules\n\nDefine your base paradigm constraint rules here.")
+    print(f"Initialized new domain at {domain_path}")
+
+def run_script(script_path, args):
+    cmd = [sys.executable, str(Path("engine") / script_path)] + args
+    print(f"Running: {' '.join(cmd)}")
+    subprocess.run(cmd, check=True)
+
+def main():
+    parser = argparse.ArgumentParser(description="Epistemic Fine-Tuning Engine")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Init
+    init_parser = subparsers.add_parser("init", help="Initialize a new domain")
+    init_parser.add_argument("domain", help="Path to new domain (e.g. domains/secure-rust)")
+
+    # Generate / Build Mix
+    gen_parser = subparsers.add_parser("generate", help="Generate the dataset and build the mix")
+    gen_parser.add_argument("--domain", required=True, help="Path to domain")
+
+    # Train
+    train_parser = subparsers.add_parser("train", help="Run the QLoRA finetuning")
+    train_parser.add_argument("--domain", required=True, help="Path to domain")
+    train_parser.add_argument("--base-model", default="microsoft/Phi-3-mini-4k-instruct", help="HF model name")
+    train_parser.add_argument("--epochs", default="6", help="Epochs to train")
+
+    # Evaluate
+    eval_parser = subparsers.add_parser("evaluate", help="Prove the model correctness")
+    eval_parser.add_argument("--domain", required=True, help="Path to domain")
+    eval_parser.add_argument("--adapter", required=True, help="Path to compiled adapter")
+
+    args, extra = parser.parse_known_args()
+
+    if args.command == "init":
+        init_domain(args.domain)
+    elif args.command == "generate":
+        run_script("build_training_mix.py", ["--domain", args.domain] + extra)
+    elif args.command == "train":
+        run_script("run_finetune.py", ["--domain", args.domain, "--epochs", args.epochs] + extra)
+    elif args.command == "evaluate":
+        run_script("evaluate_benchmark.py", ["--domain", args.domain, "--adapter", args.adapter] + extra)
+
+if __name__ == "__main__":
+    main()

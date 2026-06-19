@@ -128,6 +128,37 @@ Anyone with a coherent authored seed corpus in their domain can reproduce the me
 
 ---
 
+## The Epistemic Engine CLI
+
+The core architecture has been decoupled from specific domain payloads into a scalable, generic product. This allows any team to define their proprietary constraints and synthesize an aligned dataset for local fine-tuning without polluting the core execution pipeline.
+
+### 1. Initialize a New Domain
+Start by scaffolding an empty domain. This creates the required folder structure, a blank benchmark template, and a seed rule file.
+```bash
+./epistemic.py init domains/my-custom-domain
+```
+*What you do next:* Edit `domains/my-custom-domain/corpus/seed/rules.md` with your strict paradigm constraints, and define your evaluation tracks (e.g., C1-C4) in `benchmark/questions.json`.
+
+### 2. Generate the Synthesized Curriculum
+Once your seed rules and benchmarks are defined, the engine expands these into a massive, diverse training mix by crossing your rules with different structural tracks (contrastive examples, analogies, generative cases).
+```bash
+./epistemic.py generate --domain domains/my-custom-domain
+```
+
+### 3. Train the Local Expert Model
+Train your local small LLM (e.g., Phi-3 Mini) using QLoRA against the synthesized curriculum, destroying its base-model biases and enforcing your strict constraints.
+```bash
+./epistemic.py train --domain domains/my-custom-domain --epochs 3 --base-model microsoft/Phi-3-mini-4k-instruct
+```
+
+### 4. Evaluate the Paradigm Shift
+Validate that your new model passes the rigorous evaluation tracks and refuses to fall back into standard, unconstrained paradigms.
+```bash
+./epistemic.py evaluate --domain domains/my-custom-domain --adapter domains/my-custom-domain/corpus/adapters/adapter_final
+```
+
+---
+
 ## Architecture Decision Records
 
 | # | Title | Status |

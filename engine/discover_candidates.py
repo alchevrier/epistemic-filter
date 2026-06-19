@@ -68,7 +68,7 @@ SEARCH_QUERIES = [
     # Temporal isolation / time protection (seL4, capability OS)
     (
         "(cat:cs.OS OR cat:cs.CR)",
-        '("temporal isolation" OR "time protection" OR "timing channel") AND ("kernel" OR "hypervisor" OR "verified")',
+        '("temporal isolation" OR "time protection" OR "determinism") AND ("kernel" OR "hypervisor" OR "verified")',
     ),
     # WCET static analysis — tighter focus than previous (abstract interpretation, ILP)
     (

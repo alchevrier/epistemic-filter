@@ -59,15 +59,15 @@ EMBED_MODEL = "nomic-embed-text"
 DOMAIN_RELEVANCE_THRESHOLD = 0.70   # Lowered from 0.75 — centroid vocabulary too domain-specific;
                                     # best published adjacent papers peak at 0.78. Will recompute
                                     # centroid after first training round to shift toward published vocab.
-REASONING_DEPTH_THRESHOLD = 0.20    # Phase 1 heuristic baseline (ADR-0001 Phase 2 target: 0.80)
+REASONING_DEPTH_THRESHOLD = 0.25    # Harder epistemic weights
 
 # ADR-0011 feature weights
 FEATURE_WEIGHTS = {
-    "premise_declaration": 0.25,
-    "derivation_chain": 0.30,
-    "frame_exposure": 0.20,
-    "assumption_challenge": 0.10,
-    "conclusion_specificity": 0.10,
+    "premise_declaration": 0.15,
+    "derivation_chain": 0.15,
+    "frame_exposure": 0.35,
+    "assumption_challenge": 0.25,
+    "conclusion_specificity": 0.05,
     "frame_trap_absence": 0.05,
 }
 
@@ -216,9 +216,8 @@ def score_domain_relevance(embedding: np.ndarray, centroid: np.ndarray) -> float
 # ADR-0011 Feature 1 — Explicit Premise Declaration
 _PREMISE_POS = re.compile(
     r"\b(we assume|given that|under the (assumption|constraint|model) that"
-    r"|starting from|we define|let us define|let [A-Z]\b|precondition"
-    r"|we take as given|our model assumes|formally[,:]"
-    r"|definition[:\s]|lemma[:\s]|theorem[:\s])\b",
+    r"|starting from|we define|precondition"
+    r"|we take as given|our model assumes|formally[,:])\b",
     re.IGNORECASE,
 )
 _PREMISE_NEG = re.compile(
@@ -232,8 +231,8 @@ _PREMISE_NEG = re.compile(
 _DERIVATION_POS = re.compile(
     r"\b(therefore|it follows (that)?|this implies|hence|thus"
     r"|because [a-z]|since [a-z]|consequently|this means that"
-    r"|we (can |now )?conclude|this (shows|demonstrates|proves)"
-    r"|from (this|the above)|by (substitution|induction|contradiction)"
+    r"|we (can |now )?conclude|this (shows|demonstrates)"
+    r"|from (this|the above)"
     r"|observe that|note that|we note|it can be derived"
     r"|by construction|which (means|implies|shows)|this gives us"
     r"|it is (then|now) (clear|straightforward) that)\b",

@@ -7,6 +7,7 @@ Reads:
     corpus/seed/                   — seed corpus (clock-aware-programming docs)
     corpus/known-wrong-claims.json — W-register for contrastive examples
     corpus/analogy-examples.json   — C3 cross-domain analogy Q&A pairs
+    corpus/c4-coding-examples.json — C4 generative coding Q&A pairs
 
 Writes:
     corpus/training/mix.jsonl      — full training dataset, JSONL format
@@ -32,18 +33,37 @@ Usage:
 
 import json
 import random
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
-DEFAULT_SEED_DIR = Path("/home/alchevrier/Repositories/clock-aware-programming/docs")
-DEFAULT_OUT_DIR  = REPO_ROOT / "corpus" / "training"
 
-ACCEPTED_DIR      = REPO_ROOT / "corpus" / "accepted"
-WRONG_CLAIMS_PATH = REPO_ROOT / "corpus" / "known-wrong-claims.json"
-ANALOGY_PATH      = REPO_ROOT / "corpus" / "analogy-examples.json"
-C1_PATH           = REPO_ROOT / "corpus" / "c1-examples.json"
+import sys
+DOMAIN_ROOT = REPO_ROOT / "domains" / "cap"
+for i, arg in enumerate(sys.argv):
+    if arg == "--domain" and i + 1 < len(sys.argv):
+        DOMAIN_ROOT = Path(sys.argv[i + 1])
+
+DEFAULT_SEED_DIR = Path("/home/alchevrier/Repositories/clock-aware-programming/docs")
+DEFAULT_OUT_DIR  = DOMAIN_ROOT / "corpus" / "training"
+
+ACCEPTED_DIR      = DOMAIN_ROOT / "corpus" / "accepted"
+WRONG_CLAIMS_PATH = DOMAIN_ROOT / "corpus" / "known-wrong-claims.json"
+ANALOGY_PATH      = DOMAIN_ROOT / "corpus" / "analogy-examples.json"
+C1_PATH           = DOMAIN_ROOT / "corpus" / "c1-examples.json"
+C4_CODING_PATH    = DOMAIN_ROOT / "corpus" / "c4-coding-examples.json"
+
+NOISY_ACCEPTED_MARKERS = [
+    "report github issue",
+    "submit in github",
+    "why html?",
+    "initializereadingpreferences",
+    "localstorage.getitem",
+    "instructions for reporting errors",
+    "experimental support, please view the build logs for errors",
+]
 
 # Tier ratios (for reporting only — actual counts use natural strategy below)
 TIER_RATIOS = {
@@ -53,6 +73,7 @@ TIER_RATIOS = {
     "seed":         0.10,
     "analogy":      0.00,  # additive, not ratio-controlled
     "c1":           0.00,  # additive, not ratio-controlled
+    "c4_coding":    0.00,  # additive, not ratio-controlled
 }
 
 # ---------------------------------------------------------------------------
@@ -139,8 +160,47 @@ def load_accepted_docs() -> tuple[list[dict], list[dict]]:
     A document is cross-domain if its title/abstract contains cross-domain keywords.
     """
     primary, cross_domain = [], []
+    skipped_noisy = 0
     if not ACCEPTED_DIR.exists():
         return primary, cross_domain
+
+    def clean_accepted_text(raw_text: str) -> str | None:
+        text = re.sub(r"\s+", " ", raw_text).strip()
+        lower = text.lower()
+
+        abstract_idx = lower.find(" abstract ")
+        if abstract_idx > 0:
+            for marker in NOISY_ACCEPTED_MARKERS:
+                marker_idx = lower.find(marker)
+                if marker_idx != -1 and marker_idx < abstract_idx:
+                    text = text[max(0, abstract_idx - 200):]
+                    lower = text.lower()
+                    break
+
+        for footer in [
+            " instructions for reporting errors ",
+            " experimental support, please view the build logs for errors ",
+            " report github issue ",
+        ]:
+            idx = lower.find(footer)
+            if idx != -1:
+                text = text[:idx]
+                lower = text.lower()
+
+        marker_hits = sum(1 for m in NOISY_ACCEPTED_MARKERS if m in lower)
+        noisy_prefix = (
+            "localstorage" in lower[:600]
+            or "document.documentelement.setattribute" in lower[:1000]
+            or "report github issue" in lower[:1200]
+        )
+        if marker_hits >= 2 and noisy_prefix:
+            return None
+
+        # Keep only substantial documents in accepted tier.
+        if len(text.split()) < 400:
+            return None
+
+        return text
 
     for doc_dir in sorted(ACCEPTED_DIR.iterdir()):
         text_path   = doc_dir / "text.txt"
@@ -148,7 +208,11 @@ def load_accepted_docs() -> tuple[list[dict], list[dict]]:
         if not text_path.exists():
             continue
 
-        text = text_path.read_text(encoding="utf-8").strip()
+        raw_text = text_path.read_text(encoding="utf-8").strip()
+        text = clean_accepted_text(raw_text)
+        if text is None:
+            skipped_noisy += 1
+            continue
         record = {}
         if record_path.exists():
             record = json.loads(record_path.read_text(encoding="utf-8"))
@@ -179,6 +243,9 @@ def load_accepted_docs() -> tuple[list[dict], list[dict]]:
             cross_domain.append(entry)
         else:
             primary.append(entry)
+
+    if skipped_noisy:
+        print(f"  [cleaning] skipped {skipped_noisy} noisy/insufficient accepted documents")
 
     return primary, cross_domain
 
@@ -254,6 +321,24 @@ def load_c1_examples() -> list[dict]:
     return examples
 
 
+def load_c4_coding_examples() -> list[dict]:
+    """Load C4 generative coding Q&A training examples (chat format)."""
+    if not C4_CODING_PATH.exists():
+        return []
+    entries = json.loads(C4_CODING_PATH.read_text(encoding="utf-8"))
+    examples = []
+    for entry in entries:
+        text = phi3_chat(SYSTEM_PROMPT, entry["question"], entry["answer"])
+        examples.append({
+            "text": text,
+            "tier": "c4_coding",
+            "source": f"corpus/c4-coding-examples.json#{entry['id']}",
+            "c4_id": entry["id"],
+            "word_count": len(text.split()),
+        })
+    return examples
+
+
 def replicate_to_target(docs: list[dict], target_count: int) -> list[dict]:
     """
     Replicate a list of documents (with shuffling) to reach approximately
@@ -307,6 +392,10 @@ def main() -> None:
     c1_docs = load_c1_examples()
     print(f"  {len(c1_docs)} C1 examples")
 
+    print("Loading C4 generative coding examples ...")
+    c4_coding_docs = load_c4_coding_examples()
+    print(f"  {len(c4_coding_docs)} C4 coding examples")
+
     total_base = len(seed_docs) + len(primary_docs) + len(cross_docs) + len(contrastive_docs)
     if total_base == 0:
         print("\nERROR: No documents found in any tier.")
@@ -322,6 +411,7 @@ def main() -> None:
     CONTRASTIVE_REPS = 2  # 2x ensures each degree label seen multiple times per epoch
     ANALOGY_REPS     = 2  # 2x ensures each mechanism mapping seen multiple times per epoch
     C1_REPS          = 2  # 2x ensures each assumption-removal pattern seen multiple times
+    C4_CODING_REPS   = 5  # 5x reinforces implementation-level CAP phrasing heavily since we have very few examples representing this task.
 
     if primary_docs:
         counts = {
@@ -331,6 +421,7 @@ def main() -> None:
             "contrastive":  len(contrastive_docs) * CONTRASTIVE_REPS,   # 2x, degree taxonomy
             "analogy":      len(analogy_docs) * ANALOGY_REPS,           # 2x, mechanism mapping
             "c1":           len(c1_docs) * C1_REPS,                     # 2x, assumption-removal
+            "c4_coding":    len(c4_coding_docs) * C4_CODING_REPS,       # 2x, CAP coding responses
         }
     else:
         # No accepted docs yet — seed + contrastive only
@@ -344,6 +435,7 @@ def main() -> None:
             "contrastive":  len(contrastive_docs) * CONTRASTIVE_REPS,
             "analogy":      len(analogy_docs) * ANALOGY_REPS,
             "c1":           len(c1_docs) * C1_REPS,
+            "c4_coding":    len(c4_coding_docs) * C4_CODING_REPS,
         }
 
     print("Tier counts:")
@@ -360,6 +452,7 @@ def main() -> None:
         "contrastive":  replicate_to_target(contrastive_docs, counts["contrastive"]),
         "analogy":      replicate_to_target(analogy_docs,     counts["analogy"]),
         "c1":           replicate_to_target(c1_docs,          counts["c1"]),
+        "c4_coding":    replicate_to_target(c4_coding_docs,   counts["c4_coding"]),
     }
 
     # --- Merge and shuffle ---
@@ -382,7 +475,10 @@ def main() -> None:
     with mix_path.open("w", encoding="utf-8") as fh:
         for doc in all_docs:
             line = {"text": doc["text"]}
-            for k in ("tier", "source", "arxiv_id", "wrong_claim_id", "degree", "analogy_id", "domain", "c1_id"):
+            for k in (
+                "tier", "source", "arxiv_id", "wrong_claim_id", "degree",
+                "analogy_id", "domain", "c1_id", "c4_id"
+            ):
                 if k in doc:
                     line[k] = doc[k]
             fh.write(json.dumps(line, ensure_ascii=False) + "\n")
@@ -399,7 +495,7 @@ def main() -> None:
 
     manifest = {
         "built_at": datetime.now(timezone.utc).isoformat(),
-        "mix_path": str(mix_path.relative_to(REPO_ROOT)),
+        "mix_path": str(str(mix_path)),
         "total_documents": len(all_docs),
         "total_words": word_total,
         "estimated_tokens": token_estimate,
@@ -411,7 +507,7 @@ def main() -> None:
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     # --- Print summary ---
-    print(f"Written: {mix_path.relative_to(REPO_ROOT)}")
+    print(f"Written: {str(mix_path)}")
     print(f"  Total documents : {len(all_docs):,}")
     print(f"  Total words     : {word_total:,}")
     print(f"  Estimated tokens: {token_estimate:,}")
@@ -422,7 +518,7 @@ def main() -> None:
             actual_pct = stats["count"] / max(len(all_docs), 1) * 100
             print(f"  {tier:<14} {stats['count']:>5} docs  {actual_pct:5.1f}%  {stats['words']:>8,} words")
     print()
-    print(f"Manifest: {manifest_path.relative_to(REPO_ROOT)}")
+    print(f"Manifest: {str(manifest_path)}")
 
     # --- Warnings ---
     if len(primary_docs) == 0:
