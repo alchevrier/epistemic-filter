@@ -7,14 +7,41 @@ import json
 
 def init_domain(domain_path):
     dp = Path(domain_path)
-    dp.mkdir(parents=True, exist_exist=True)
+    dp.mkdir(parents=True, exist_ok=True)
     (dp / "corpus" / "seed").mkdir(parents=True, exist_ok=True)
     (dp / "benchmark" / "results").mkdir(parents=True, exist_ok=True)
     
+    # Provide a self-documenting JSON structure so users know exactly the format expected
+    example_benchmark = {
+        "version": "1.0",
+        "total_questions": 1,
+        "components": {
+            "C1": {
+                "name": "Custom Domain Rule Check",
+                "question_count": 1,
+                "description": "Checks if the model understands the core constraint of this domain."
+            }
+        },
+        "questions": [
+            {
+                "id": "Q-001",
+                "component": "C1",
+                "question": "What happens if we violate the core constraint?",
+                "expected_answer": "The system fails mathematically because...",
+                "discriminator": {
+                    "0_to_1": "Must mention the mathematical failure.",
+                    "1_to_2": "Must explain the precise mechanism of the failure."
+                }
+            }
+        ]
+    }
+    
     with open(dp / "benchmark" / "questions.json", "w") as f:
-        json.dump({"total_questions": 0, "components": {}, "questions": []}, f, indent=2)
+        json.dump(example_benchmark, f, indent=2)
+        
     with open(dp / "corpus" / "seed" / "rules.md", "w") as f:
-        f.write("# Rules\n\nDefine your base paradigm constraint rules here.")
+        f.write("# Domain Rules\n\n1. Define your core constraints here.\n2. E.g., 'Never use std::mutex'.\n3. The `generate` command will read this file to build training data.")
+        
     print(f"Initialized new domain at {domain_path}")
 
 def run_script(script_path, args):
