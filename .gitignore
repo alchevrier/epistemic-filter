@@ -3,3 +3,5 @@ corpus/training/
 corpus/adapters/
 benchmark/results/
 domains/cap/
+scratch/
+__pycache__/
