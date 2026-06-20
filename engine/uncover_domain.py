@@ -30,6 +30,9 @@ OLLAMA_GENERATE = "http://127.0.0.1:11434/api/generate"
 
 def call_llm(provider: str, api_key: str, system_prompt: str, prompt: str, model: str, max_tokens=1024, temperature=0.1) -> str:
     """Use selected provider to extract constraints."""
+    import time
+    from urllib.parse import urlparse
+
     try:
         if provider == "ollama":
             payload = {
@@ -44,6 +47,7 @@ def call_llm(provider: str, api_key: str, system_prompt: str, prompt: str, model
             resp = requests.post(OLLAMA_GENERATE, json=payload, timeout=120)
             resp.raise_for_status()
             return resp.json()["response"].strip()
+            
         elif provider in ["openai", "copilot"]:
             url = "https://api.openai.com/v1/chat/completions" if provider == "openai" else "https://models.inference.ai.azure.com/chat/completions"
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
@@ -56,9 +60,19 @@ def call_llm(provider: str, api_key: str, system_prompt: str, prompt: str, model
                 "max_tokens": max_tokens,
                 "temperature": temperature
             }
-            resp = requests.post(url, json=payload, headers=headers, timeout=120)
-            resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"].strip()
+            
+            # Simple retry backoff for rate limits (429)
+            for attempt in range(5):
+                resp = requests.post(url, json=payload, headers=headers, timeout=120)
+                if resp.status_code == 429:
+                    wait = 2 ** attempt * 3 # 3, 6, 12, 24, 48s
+                    print(f"  [rate limit] {provider} HTTP 429, retrying in {wait}s ...", file=sys.stderr)
+                    time.sleep(wait)
+                    continue
+                resp.raise_for_status()
+                return resp.json()["choices"][0]["message"]["content"].strip()
+            
+            resp.raise_for_status() # raise if 5 attempts fail
         elif provider == "anthropic":
             headers = {
                 "x-api-key": api_key,
