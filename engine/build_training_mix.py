@@ -271,14 +271,21 @@ def load_contrastive_examples() -> list[dict]:
     examples = []
     for entry in claims:
         user_msg = CONTRASTIVE_USER.format(claim=entry["claim"])
-        asst_msg = f"DEGREE: {entry['degree']}\n\n{entry['refutation']}"
+        degree = entry.get('degree', 'false')
+        if 'refutation' in entry:
+            refutation = entry['refutation']
+        else:
+            reason = entry.get('reason', 'This violates the domain rules.')
+            refutation = f"Degree: {degree}. The claim is incorrect in this architecture. {reason}"
+        
+        asst_msg = f"DEGREE: {degree}\n\n{refutation}"
         text = phi3_chat(SYSTEM_PROMPT, user_msg, asst_msg)
         examples.append({
             "text": text,
             "tier": "contrastive",
-            "source": f"corpus/known-wrong-claims.json#{entry['id']}",
-            "wrong_claim_id": entry["id"],
-            "degree": entry["degree"],
+            "source": f"corpus/known-wrong-claims.json#{entry.get('id', f'AUTO-{len(examples)}')}",
+            "wrong_claim_id": entry.get("id", f"AUTO-{len(examples)}"),
+            "degree": degree,
             "word_count": len(text.split()),
         })
     return examples
