@@ -139,19 +139,31 @@ Start by scaffolding an empty domain. This creates the required folder structure
 ```
 *What you do next:* Edit `domains/my-custom-domain/corpus/seed/rules.md` with your strict paradigm constraints, and define your evaluation tracks (e.g., C1-C4) in `benchmark/questions.json`.
 
-### 2. Generate the Synthesized Curriculum
-Once your seed rules and benchmarks are defined, the engine expands these into a massive, diverse training mix by crossing your rules with different structural tracks (contrastive examples, analogies, generative cases).
+### 2. Auto-Uncover a Domain (Dynamic Discovery)
+Instead of writing your paradigm rules manually, you can point the engine at an existing, mature repository. The engine will read your architectural documents (ADRs, READMEs) and source code, and use an LLM (local or cloud) to automatically extract your axioms and forbidden anti-patterns.
+```bash
+# Local execution (requires ~16GB+ VRAM for a strong 70B model)
+./epistemic.py uncover --repo ../my-mature-project --domain domains/my-custom-domain --provider ollama --model llama3:70b
+
+# Cloud execution (Flawless extraction, circumvents context limits)
+export GITHUB_TOKEN="ghp_xxx"
+./epistemic.py uncover --repo ../my-mature-project --domain domains/my-custom-domain --provider copilot --model gpt-4o
+```
+*What you do next:* Verify the generated `corpus/seed/rules.md` and `corpus/known-wrong-claims.json`, then proceed to generation.
+
+### 3. Generate the Synthesized Curriculum
+Once your seed rules and benchmarks are defined (manually or via `uncover`), the engine expands these into a massive, diverse training mix by crossing your rules with different structural tracks (contrastive examples, analogies, generative cases).
 ```bash
 ./epistemic.py generate --domain domains/my-custom-domain
 ```
 
-### 3. Train the Local Expert Model
+### 4. Train the Local Expert Model
 Train your local small LLM (e.g., Phi-3 Mini) using QLoRA against the synthesized curriculum, destroying its base-model biases and enforcing your strict constraints.
 ```bash
 ./epistemic.py train --domain domains/my-custom-domain --epochs 3 --base-model microsoft/Phi-3-mini-4k-instruct
 ```
 
-### 4. Evaluate the Paradigm Shift
+### 5. Evaluate the Paradigm Shift
 Validate that your new model passes the rigorous evaluation tracks and refuses to fall back into standard, unconstrained paradigms.
 ```bash
 ./epistemic.py evaluate --domain domains/my-custom-domain --adapter domains/my-custom-domain/corpus/adapters/adapter_final
