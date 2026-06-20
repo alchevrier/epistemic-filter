@@ -19,9 +19,11 @@
 
 The filter accepts documents that look like your seed and reason like your seed. If your seed embodies a framing trap — a locally correct belief that prevents you from questioning the assumption beneath it — the pipeline will scale that trap into a training corpus and the model will defend it fluently.
 
-The W-register (the known-wrong claims register) is only as complete as your self-awareness. If you have not escaped a framing trap in your domain, it will not appear in your W-register. It will appear in your training data as accepted signal. The model will learn it.
+The W-register (the known-wrong claims register) was traditionally only as complete as the curator's self-awareness. If you had not personally escaped a framing trap, it wouldn't appear in your W-register, and the model would learn to defend it.
 
-There is no automated fix for this. The quality of the output is bounded by the quality of your prior, not by the quality of the pipeline. The pipeline's job is to faithfully reproduce what you know at scale — which means it faithfully reproduces what you don't know at scale too.
+**Dynamic Discovery (`--uncover`) changes this.** By pointing a frontier model at a mature repository's ADRs and source code, the LLM acts as an architectural mirror. It automatically extracts not just the explicit rules, but the *Negative Space*—the standard, baseline paradigms that are forbidden by the new architecture. 
+
+This offloads the burden of flawless self-awareness. It catches framing traps programmatically before they bake into the weights. The pipeline still reproduces a prior at scale, but "the prior" no longer relies exclusively on human memory—it is mathematically mined from the ground truth of the code and documentation.
 
 **What this means in practice:**
 
