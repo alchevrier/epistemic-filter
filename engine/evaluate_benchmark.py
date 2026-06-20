@@ -59,6 +59,13 @@ from pathlib import Path
 import requests
 
 REPO_ROOT       = Path(__file__).parent.parent
+
+import sys
+DOMAIN_ROOT = REPO_ROOT / "domains" / "cap"
+for i, arg in enumerate(sys.argv):
+    if arg == "--domain" and i + 1 < len(sys.argv):
+        DOMAIN_ROOT = Path(sys.argv[i + 1])
+
 QUESTIONS_PATH  = DOMAIN_ROOT / "benchmark" / "questions.json"
 QUESTIONS_C4_PATH = DOMAIN_ROOT / "benchmark" / "questions_c4.json"
 RESULTS_DIR     = DOMAIN_ROOT / "benchmark" / "results"

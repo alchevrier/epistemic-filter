@@ -72,6 +72,14 @@ def main():
     eval_parser.add_argument("--domain", required=True, help="Path to domain")
     eval_parser.add_argument("--adapter", required=True, help="Path to compiled adapter")
 
+    # Uncover
+    uncover_parser = subparsers.add_parser("uncover", help="Dynamically uncover a codebase's constraints into a new domain")
+    uncover_parser.add_argument("--repo", required=True, help="Path to the repository to mine")
+    uncover_parser.add_argument("--domain", required=True, help="Path to the newly uncovered domain")
+    uncover_parser.add_argument("--provider", default="ollama", choices=["ollama", "openai", "anthropic", "copilot", "gemini"], help="LLM provider (default: ollama)")
+    uncover_parser.add_argument("--model", help="Model name (e.g. gpt-4o, claude-3-5-sonnet, gemini-1.5-pro)")
+    uncover_parser.add_argument("--api-key", help="API key or GitHub Token for Copilot")
+
     args, extra = parser.parse_known_args()
 
     if args.command == "init":
@@ -82,6 +90,11 @@ def main():
         run_script("run_finetune.py", ["--domain", args.domain, "--epochs", args.epochs] + extra)
     elif args.command == "evaluate":
         run_script("evaluate_benchmark.py", ["--domain", args.domain, "--adapter", args.adapter] + extra)
+    elif args.command == "uncover":
+        cmd_args = ["--repo", args.repo, "--domain", args.domain, "--provider", args.provider]
+        if args.model: cmd_args.extend(["--model", args.model])
+        if args.api_key: cmd_args.extend(["--api-key", args.api_key])
+        run_script("uncover_domain.py", cmd_args + extra)
 
 if __name__ == "__main__":
     main()
